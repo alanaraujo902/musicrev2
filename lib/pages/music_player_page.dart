@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:on_audio_query/on_audio_query.dart';
+import 'package:filesystem_picker/filesystem_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../controllers/music_controller.dart';
+import '../models/local_song.dart';
 
 class MusicPlayerPage extends StatefulWidget {
   @override
@@ -16,10 +20,39 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
     controller.init().then((_) => setState(() {}));
   }
 
+  Future<void> _selectDirectory() async {
+    final rootPath = Directory('/storage/emulated/0'); // padrão no Android
+
+    String? path = await FilesystemPicker.open(
+      title: 'Selecione uma pasta',
+      context: context,
+      rootDirectory: rootPath,
+      fsType: FilesystemType.folder,
+      folderIconColor: Colors.teal,
+      pickText: 'Selecionar esta pasta',
+      requestPermission: () async {
+        return await controller.requestPermission();
+      },
+    );
+
+    if (path != null) {
+      await controller.loadSongsFromDirectory(path);
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Músicas Locais')),
+      appBar: AppBar(
+        title: Text('Músicas Locais'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.folder_open),
+            onPressed: _selectDirectory,
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
@@ -29,14 +62,19 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
               itemCount: controller.songs.length,
               itemBuilder: (context, index) {
                 final song = controller.songs[index];
+                final title = song.title;
+                final artist = song.artist ?? "Artista desconhecido";
+
                 return ListTile(
-                  leading: QueryArtworkWidget(
+                  leading: song is SongModel
+                      ? QueryArtworkWidget(
                     id: song.id,
                     type: ArtworkType.AUDIO,
                     nullArtworkWidget: Icon(Icons.music_note),
-                  ),
-                  title: Text(song.title),
-                  subtitle: Text(song.artist ?? "Artista desconhecido"),
+                  )
+                      : Icon(Icons.music_note),
+                  title: Text(title),
+                  subtitle: Text(artist),
                   onTap: () => controller.playSong(song),
                 );
               },
@@ -55,7 +93,7 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
                 ),
               );
             },
-          )
+          ),
         ],
       ),
     );
