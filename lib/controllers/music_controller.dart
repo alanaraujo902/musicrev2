@@ -6,6 +6,7 @@ import '../models/local_song.dart';
 class MusicController {
   final _audioService = AudioService();
   List<dynamic> songs = [];
+  int _currentSongIndex = -1;
 
   Future<void> init() async {
     final granted = await _requestPermissions();
@@ -24,6 +25,7 @@ class MusicController {
   }
 
   Future<void> playSong(dynamic song) async {
+    _currentSongIndex = songs.indexOf(song);
     final uri = song is SongModel ? song.uri! : song.uri;
     await _audioService.playFromUri(uri);
   }
@@ -31,6 +33,23 @@ class MusicController {
   Future<void> togglePlayPause() async {
     await _audioService.togglePlayPause();
   }
+
+  Future<void> playNext() async {
+    if (_currentSongIndex < songs.length - 1) {
+      await playSong(songs[_currentSongIndex + 1]);
+    }
+  }
+
+  Future<void> playPrevious() async {
+    if (_currentSongIndex > 0) {
+      await playSong(songs[_currentSongIndex - 1]);
+    }
+  }
+
+  dynamic get currentSong =>
+      (_currentSongIndex >= 0 && _currentSongIndex < songs.length)
+          ? songs[_currentSongIndex]
+          : null;
 
   Stream<bool> get playingStream => _audioService.playingStream;
 
