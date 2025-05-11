@@ -5,6 +5,8 @@ import 'package:filesystem_picker/filesystem_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../controllers/music_controller.dart';
 import '../models/local_song.dart';
+import 'music_playing_page.dart';
+
 
 class MusicPlayerPage extends StatefulWidget {
   @override
@@ -75,7 +77,14 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
                       : Icon(Icons.music_note),
                   title: Text(title),
                   subtitle: Text(artist),
-                  onTap: () => controller.playSong(song),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MusicPlayingPage(song: song, controller: controller),
+                      ),
+                    );
+                  },
                 );
               },
             ),
