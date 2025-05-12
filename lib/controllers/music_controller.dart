@@ -4,6 +4,8 @@ import '../services/audio_service.dart';
 import '../models/local_song.dart';
 import '../services/playlist_service.dart';
 import '../models/playlist.dart';
+import 'package:flutter/foundation.dart';
+
 
 class MusicController {
   static final MusicController _instance = MusicController._internal();
@@ -16,6 +18,8 @@ class MusicController {
 
   final _audioService = AudioService();
   final PlaylistService _playlistService = PlaylistService();
+  final ValueNotifier<dynamic> currentSongNotifier = ValueNotifier(null);
+
 
   List<dynamic> songs = [];
   int _currentSongIndex = -1;
@@ -41,6 +45,7 @@ class MusicController {
     _currentSongIndex = songs.indexOf(song);
     final uri = song is SongModel ? song.uri! : song.uri;
     await _audioService.playFromUri(uri, song: song);
+    currentSongNotifier.value = song;
   }
 
   Future<void> togglePlayPause() async {
@@ -50,6 +55,7 @@ class MusicController {
   Future<void> playNext() async {
     if (_currentSongIndex < songs.length - 1) {
       await playSong(songs[_currentSongIndex + 1]);
+      currentSongNotifier.value = currentSong;
     }
   }
 
@@ -96,8 +102,10 @@ class MusicController {
     if (current != null) {
       current.isChecked = true;
     }
-    playNext(); // já é um Future, mas não precisa esperar aqui
+    playNext();
   }
+
+
 
   Future<void> persistOrderIfPlaylist() async {
     if (_loadedPlaylist != null) {

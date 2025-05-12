@@ -4,6 +4,8 @@ import 'package:on_audio_query/on_audio_query.dart';
 import '../models/local_song.dart';
 import '../controllers/music_controller.dart';
 import '../pages/now_playing_page.dart';
+import 'package:flutter/foundation.dart';
+
 
 class SongListWidget extends StatefulWidget {
   final List<dynamic> songs;
@@ -25,9 +27,9 @@ class _SongListWidgetState extends State<SongListWidget> {
     return Column(
       children: [
         Expanded(
-          child: StreamBuilder<bool>(
-            stream: widget.controller.playingStream,
-            builder: (context, snapshot) {
+          child: ValueListenableBuilder(
+            valueListenable: widget.controller.currentSongNotifier,
+            builder: (context, value, _) {
               return ReorderableListView.builder(
                 itemCount: widget.songs.length,
                 onReorder: (oldIndex, newIndex) async {
