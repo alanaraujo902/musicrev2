@@ -64,7 +64,7 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
       onSaved: (playlist) async {
         playlists.add(playlist);
         await playlistService.savePlaylists(playlists);
-        await _loadPlaylists(); // <-- Atualiza a UI com playlists salvas
+        await _loadPlaylists();
       },
     );
   }
@@ -102,6 +102,33 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Músicas Locais')),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: Theme.of(context).primaryColor),
+              child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
+            ),
+            ListTile(
+              leading: Icon(Icons.library_music),
+              title: Text('Músicas'),
+              onTap: () {
+                Navigator.pop(context); // Fecha o drawer
+                Navigator.pushNamed(context, '/'); // Para Músicas
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.playlist_play),
+              title: Text('Playlists'),
+              onTap: () {
+                Navigator.pop(context); // Fecha o drawer
+                Navigator.pushNamed(context, '/playlists'); // Vai para a tela de playlists
+              },
+            ),
+          ],
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
