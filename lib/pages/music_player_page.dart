@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:on_audio_query/on_audio_query.dart';
 import 'package:filesystem_picker/filesystem_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../controllers/music_controller.dart';
+import '../models/playlist.dart';
 import '../models/local_song.dart';
-import 'now_playing_page.dart';
-
+import '../services/playlist_service.dart';
+import '../widgets/song_list_widget.dart';
+import '../widgets/playlist_card.dart';
+import '../dialogs/save_playlist_dialog.dart';
+import '../dialogs/add_to_playlist_dialog.dart';
 
 class MusicPlayerPage extends StatefulWidget {
   @override
@@ -15,7 +17,22 @@ class MusicPlayerPage extends StatefulWidget {
 
 class _MusicPlayerPageState extends State<MusicPlayerPage> {
   final controller = MusicController();
+  final PlaylistService playlistService = PlaylistService();
+  List<Playlist> playlists = [];
   bool hasSongs = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPlaylists();
+  }
+
+  Future<void> _loadPlaylists() async {
+    final loaded = await playlistService.loadPlaylists();
+    setState(() {
+      playlists = loaded;
+    });
+  }
 
   Future<void> _selectDirectory() async {
     final rootPath = Directory('/storage/emulated/0');
@@ -40,6 +57,41 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
     }
   }
 
+  void _savePlaylist() {
+    showSavePlaylistDialog(
+      context: context,
+      songs: controller.songs,
+      onSaved: (playlist) async {
+        playlists.add(playlist);
+        await playlistService.savePlaylists(playlists);
+        await _loadPlaylists(); // <-- Atualiza a UI com playlists salvas
+      },
+    );
+  }
+
+  void _addToPlaylist(Playlist playlist) {
+    showAddToPlaylistDialog(
+      context: context,
+      availableSongs: controller.songs,
+      playlist: playlist,
+      onUpdated: (updatedPlaylist) async {
+        final index = playlists.indexWhere((p) => p.name == updatedPlaylist.name);
+        if (index != -1) {
+          playlists[index] = updatedPlaylist;
+          await playlistService.savePlaylists(playlists);
+          setState(() {});
+        }
+      },
+    );
+  }
+
+  void _loadPlaylist(Playlist playlist) {
+    setState(() {
+      controller.songs = playlist.songs;
+      hasSongs = playlist.songs.isNotEmpty;
+    });
+  }
+
   @override
   void dispose() {
     controller.dispose();
@@ -49,9 +101,7 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Músicas Locais'),
-      ),
+      appBar: AppBar(title: Text('Músicas Locais')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -61,54 +111,42 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
               label: Text('Selecionar Músicas'),
               onPressed: _selectDirectory,
             ),
+            SizedBox(height: 10),
+            ElevatedButton.icon(
+              icon: Icon(Icons.save),
+              label: Text("Salvar Playlist"),
+              onPressed: hasSongs ? _savePlaylist : null,
+            ),
+            SizedBox(height: 10),
+            Text("Playlists Salvas", style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(
+              height: 180,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: playlists.length,
+                itemBuilder: (context, index) {
+                  return PlaylistCard(
+                    playlist: playlists[index],
+                    onAddSongs: _addToPlaylist,
+                    onLoad: _loadPlaylist,
+                    onRemoveSongs: (updated) async {
+                      final idx = playlists.indexWhere((p) => p.name == updated.name);
+                      if (idx != -1) {
+                        playlists[idx] = updated;
+                        await playlistService.savePlaylists(playlists);
+                        setState(() {});
+                      }
+                    },
+                  );
+                },
+              ),
+            ),
             SizedBox(height: 20),
             if (hasSongs)
               Expanded(
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: controller.songs.length,
-                        itemBuilder: (context, index) {
-                          final song = controller.songs[index];
-                          final title = song.title;
-                          final artist = song.artist ?? "Artista desconhecido";
-
-                          return ListTile(
-                            leading: song is SongModel
-                                ? QueryArtworkWidget(
-                              id: song.id,
-                              type: ArtworkType.AUDIO,
-                              nullArtworkWidget: Icon(Icons.music_note),
-                            )
-                                : Icon(Icons.music_note),
-                            title: Text(title),
-                            subtitle: Text(artist),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => NowPlayingPage(song: song, controller: controller),
-                                ),
-                              );
-                              controller.playSong(song);
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                    StreamBuilder<bool>(
-                      stream: controller.playingStream,
-                      builder: (context, snapshot) {
-                        final isPlaying = snapshot.data ?? false;
-                        return ElevatedButton.icon(
-                          icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                          label: Text(isPlaying ? "Pausar" : "Tocar"),
-                          onPressed: controller.togglePlayPause,
-                        );
-                      },
-                    ),
-                  ],
+                child: SongListWidget(
+                  songs: controller.songs,
+                  controller: controller,
                 ),
               ),
           ],
@@ -117,4 +155,3 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
     );
   }
 }
-

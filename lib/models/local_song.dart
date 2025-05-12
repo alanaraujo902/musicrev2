@@ -10,4 +10,18 @@ class LocalSong {
     required this.artist,
     required this.uri,
   });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'artist': artist,
+    'uri': uri,
+  };
+
+  factory LocalSong.fromJson(Map<String, dynamic> json) => LocalSong(
+    id: json['id'],
+    title: json['title'],
+    artist: json['artist'],
+    uri: json['uri'],
+  );
 }
