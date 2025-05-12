@@ -120,7 +120,7 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
             SizedBox(height: 10),
             Text("Playlists Salvas", style: TextStyle(fontWeight: FontWeight.bold)),
             SizedBox(
-              height: 180,
+              height: 200,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: playlists.length,

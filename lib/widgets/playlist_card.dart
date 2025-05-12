@@ -18,31 +18,43 @@ class PlaylistCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.symmetric(horizontal: 6),
-      child: Container(
-        height: 220, // Ajustado de 220 para 240 para resolver o overflow de 16 pixels
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(playlist.name, style: TextStyle(fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () => onAddSongs(playlist),
-              child: Text("Adicionar músicas"),
-            ),
-            ElevatedButton(
-              onPressed: () => onRemoveSongs(playlist),
-              child: Text("Remover músicas"),
-            ),
-            ElevatedButton(
-              onPressed: () => onLoad(playlist),
-              child: Text("Carregar"),
-            ),
-          ],
+    return SizedBox(
+      width: 180,
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            children: [
+              Text(
+                playlist.name,
+                style: TextStyle(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Flexible(
+                child: Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => onAddSongs(playlist),
+                      child: Text("+ song", textAlign: TextAlign.center),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => onRemoveSongs(playlist),
+                      child: Text("- song", textAlign: TextAlign.center),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => onLoad(playlist),
+                      child: Text("Carregar", textAlign: TextAlign.center),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
