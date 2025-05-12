@@ -11,7 +11,11 @@ class PlaylistSongsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = MusicController();
+    final current = controller.currentSong;
     controller.songs = playlist.songs;
+    if (current != null && playlist.songs.any((s) => s.uri == current.uri)) {
+      controller.playSong(current);
+    }
 
     return Scaffold(
       appBar: AppBar(

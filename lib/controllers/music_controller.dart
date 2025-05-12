@@ -4,6 +4,12 @@ import '../services/audio_service.dart';
 import '../models/local_song.dart';
 
 class MusicController {
+  static final MusicController _instance = MusicController._internal();
+
+  factory MusicController() => _instance;
+
+  MusicController._internal();
+
   final _audioService = AudioService();
   List<dynamic> songs = [];
   int _currentSongIndex = -1;
@@ -27,7 +33,7 @@ class MusicController {
   Future<void> playSong(dynamic song) async {
     _currentSongIndex = songs.indexOf(song);
     final uri = song is SongModel ? song.uri! : song.uri;
-    await _audioService.playFromUri(uri);
+    await _audioService.playFromUri(uri, song: song);
   }
 
   Future<void> togglePlayPause() async {

@@ -6,6 +6,16 @@ import '../models/local_song.dart';
 class AudioService {
   final OnAudioQuery _audioQuery = OnAudioQuery();
   final AudioPlayer _audioPlayer = AudioPlayer();
+  LocalSong? _lastPlayedLocalSong;
+
+  AudioService() {
+    _audioPlayer.playerStateStream.listen((state) {
+      if (state.processingState == ProcessingState.completed &&
+          _lastPlayedLocalSong != null) {
+        _lastPlayedLocalSong!.isChecked = true;
+      }
+    });
+  }
 
   Future<List<dynamic>> loadSongs({String? directoryPath}) async {
     if (directoryPath != null) {
@@ -31,10 +41,13 @@ class AudioService {
     }
   }
 
-  Future<void> playFromUri(String uri) async {
+  Future<void> playFromUri(String uri, {LocalSong? song}) async {
     try {
       await _audioPlayer.setAudioSource(AudioSource.uri(Uri.parse(uri)));
       await _audioPlayer.play();
+      if (song != null) {
+        _lastPlayedLocalSong = song;
+      }
     } catch (e) {
       print("Erro ao tocar música: $e");
     }

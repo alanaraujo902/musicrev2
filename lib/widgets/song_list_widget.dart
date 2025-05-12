@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:marquee/marquee.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import '../../models/local_song.dart';
 import '../../controllers/music_controller.dart';
@@ -37,28 +38,49 @@ class _SongListWidgetState extends State<SongListWidget> {
 
                   return Container(
                     color: isPlaying ? Colors.orange.withOpacity(0.3) : null,
-                    child: ListTile(
-                      leading: song is SongModel
-                          ? QueryArtworkWidget(
-                        id: song.id,
-                        type: ArtworkType.AUDIO,
-                        nullArtworkWidget: Icon(Icons.music_note),
-                      )
-                          : Icon(Icons.music_note),
-                      title: Text(title),
-                      subtitle: Text(artist),
-                      onTap: () {
-                        widget.controller.playSong(song);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => NowPlayingPage(
-                              song: song,
-                              controller: widget.controller,
+                    child: GestureDetector(
+                      onTap: () async {
+                        await widget.controller.playSong(song);
+                        if (mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => NowPlayingPage(
+                                song: song,
+                                controller: widget.controller,
+                              ),
                             ),
-                          ),
-                        ).then((_) => setState(() {}));
+                          ).then((_) => setState(() {}));
+                        }
                       },
+                      child: CheckboxListTile(
+                        value: song.isChecked,
+                        onChanged: null, // Desabilita o clique no checkbox
+                        controlAffinity: ListTileControlAffinity.leading,
+                        secondary: isPlaying
+                            ? Icon(Icons.play_arrow)
+                            : (song is SongModel
+                            ? QueryArtworkWidget(
+                          id: song.id,
+                          type: ArtworkType.AUDIO,
+                          nullArtworkWidget: Icon(Icons.music_note),
+                        )
+                            : Icon(Icons.music_note)),
+                        title: isPlaying
+                            ? SizedBox(
+                          height: 20,
+                          child: Marquee(
+                            text: title,
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                            blankSpace: 60,
+                            velocity: 30,
+                            pauseAfterRound: Duration(seconds: 1),
+                            startPadding: 10,
+                          ),
+                        )
+                            : Text(title),
+                        subtitle: Text(artist),
+                      ),
                     ),
                   );
                 },
@@ -70,13 +92,36 @@ class _SongListWidgetState extends State<SongListWidget> {
           stream: widget.controller.playingStream,
           builder: (context, snapshot) {
             final isPlaying = snapshot.data ?? false;
-            return ElevatedButton.icon(
-              icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-              label: Text(isPlaying ? "Pausar" : "Tocar"),
-              onPressed: () async {
-                await widget.controller.togglePlayPause();
-                setState(() {});
-              },
+            final currentSong = widget.controller.currentSong;
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+                  label: Text(isPlaying ? "Pausar" : "Tocar"),
+                  onPressed: () async {
+                    await widget.controller.togglePlayPause();
+                    setState(() {});
+                  },
+                ),
+                SizedBox(width: 12),
+                if (currentSong != null)
+                  ElevatedButton.icon(
+                    icon: Icon(Icons.fullscreen),
+                    label: Text("Modo Tela Cheia"),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => NowPlayingPage(
+                            song: currentSong,
+                            controller: widget.controller,
+                          ),
+                        ),
+                      ).then((_) => setState(() {}));
+                    },
+                  ),
+              ],
             );
           },
         ),

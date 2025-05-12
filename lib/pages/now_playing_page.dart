@@ -14,8 +14,9 @@ class NowPlayingPage extends StatefulWidget {
 class _NowPlayingPageState extends State<NowPlayingPage> {
   @override
   Widget build(BuildContext context) {
-    final title = widget.song.title;
-    final artist = widget.song.artist ?? "Artista desconhecido";
+    final currentSong = widget.controller.currentSong;
+    final title = currentSong?.title ?? "Sem música";
+    final artist = currentSong?.artist ?? "Artista desconhecido";
 
     return Scaffold(
       appBar: AppBar(
@@ -28,14 +29,28 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
           children: [
             Icon(Icons.music_note, size: 100),
             SizedBox(height: 30),
-            Text(widget.controller.currentSong.title,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center),
+            Text(
+              title,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
             SizedBox(height: 10),
-            Text(widget.controller.currentSong.artist ?? "Artista desconhecido",
-                style: TextStyle(fontSize: 18, color: Colors.grey),
-                textAlign: TextAlign.center),
-            SizedBox(height: 40),
+            Text(
+              artist,
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton.icon(
+              icon: Icon(Icons.check),
+              label: Text("Marcar como ouvida"),
+              onPressed: () {
+                setState(() {
+                  if (currentSong != null) currentSong.isChecked = true;
+                });
+              },
+            ),
+            SizedBox(height: 20),
             StreamBuilder<bool>(
               stream: widget.controller.playingStream,
               builder: (context, snapshot) {
