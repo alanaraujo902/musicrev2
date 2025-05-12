@@ -2,6 +2,8 @@ import 'package:on_audio_query/on_audio_query.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/audio_service.dart';
 import '../models/local_song.dart';
+import '../services/playlist_service.dart';
+import '../models/playlist.dart';
 
 class MusicController {
   static final MusicController _instance = MusicController._internal();
@@ -11,8 +13,11 @@ class MusicController {
   MusicController._internal();
 
   final _audioService = AudioService();
+  final PlaylistService _playlistService = PlaylistService();
+
   List<dynamic> songs = [];
   int _currentSongIndex = -1;
+  Playlist? _loadedPlaylist;
 
   Future<void> init() async {
     final granted = await _requestPermissions();
@@ -60,7 +65,32 @@ class MusicController {
   Stream<bool> get playingStream => _audioService.playingStream;
 
   Future<void> loadSongsFromDirectory(String directoryPath) async {
+    _loadedPlaylist = null;
     songs = await _audioService.loadSongs(directoryPath: directoryPath);
+  }
+
+  void loadPlaylist(Playlist playlist) {
+    _loadedPlaylist = playlist;
+    songs = playlist.songs;
+  }
+
+  void updateCurrentIndex() {
+    final current = currentSong;
+    if (current != null) {
+      _currentSongIndex = songs.indexWhere((s) => s.uri == current.uri);
+    }
+  }
+
+  Future<void> persistOrderIfPlaylist() async {
+    if (_loadedPlaylist != null) {
+      final updated = Playlist(name: _loadedPlaylist!.name, songs: List<LocalSong>.from(songs));
+      final all = await _playlistService.loadPlaylists();
+      final idx = all.indexWhere((p) => p.name == _loadedPlaylist!.name);
+      if (idx != -1) {
+        all[idx] = updated;
+        await _playlistService.savePlaylists(all);
+      }
+    }
   }
 
   void dispose() {

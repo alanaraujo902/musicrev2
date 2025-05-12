@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
 import 'package:on_audio_query/on_audio_query.dart';
-import '../../models/local_song.dart';
-import '../../controllers/music_controller.dart';
+import '../models/local_song.dart';
+import '../controllers/music_controller.dart';
 import '../pages/now_playing_page.dart';
 
 class SongListWidget extends StatefulWidget {
@@ -10,10 +10,10 @@ class SongListWidget extends StatefulWidget {
   final MusicController controller;
 
   const SongListWidget({
-    super.key,
+    Key? key,
     required this.songs,
     required this.controller,
-  });
+  }) : super(key: key);
 
   @override
   State<SongListWidget> createState() => _SongListWidgetState();
@@ -28,8 +28,17 @@ class _SongListWidgetState extends State<SongListWidget> {
           child: StreamBuilder<bool>(
             stream: widget.controller.playingStream,
             builder: (context, snapshot) {
-              return ListView.builder(
+              return ReorderableListView.builder(
                 itemCount: widget.songs.length,
+                onReorder: (oldIndex, newIndex) async {
+                  setState(() {
+                    if (newIndex > oldIndex) newIndex -= 1;
+                    final item = widget.songs.removeAt(oldIndex);
+                    widget.songs.insert(newIndex, item);
+                    widget.controller.updateCurrentIndex();
+                  });
+                  await widget.controller.persistOrderIfPlaylist();
+                },
                 itemBuilder: (context, index) {
                   final song = widget.songs[index];
                   final title = song.title;
@@ -37,8 +46,9 @@ class _SongListWidgetState extends State<SongListWidget> {
                   final isPlaying = widget.controller.currentSong?.uri == song.uri;
 
                   return Container(
+                    key: ValueKey(song.uri),
                     color: isPlaying ? Colors.orange.withOpacity(0.3) : null,
-                    child: GestureDetector(
+                    child: ListTile(
                       onTap: () async {
                         await widget.controller.playSong(song);
                         if (mounted) {
@@ -53,34 +63,37 @@ class _SongListWidgetState extends State<SongListWidget> {
                           ).then((_) => setState(() {}));
                         }
                       },
-                      child: CheckboxListTile(
+                      leading: Checkbox(
                         value: song.isChecked,
-                        onChanged: null, // Desabilita o clique no checkbox
-                        controlAffinity: ListTileControlAffinity.leading,
-                        secondary: isPlaying
-                            ? Icon(Icons.play_arrow)
-                            : (song is SongModel
-                            ? QueryArtworkWidget(
-                          id: song.id,
-                          type: ArtworkType.AUDIO,
-                          nullArtworkWidget: Icon(Icons.music_note),
-                        )
-                            : Icon(Icons.music_note)),
-                        title: isPlaying
-                            ? SizedBox(
-                          height: 20,
-                          child: Marquee(
-                            text: title,
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                            blankSpace: 60,
-                            velocity: 30,
-                            pauseAfterRound: Duration(seconds: 1),
-                            startPadding: 10,
-                          ),
-                        )
-                            : Text(title),
-                        subtitle: Text(artist),
+                        onChanged: (value) {
+                          setState(() {
+                            song.isChecked = value ?? false;
+                          });
+                        },
                       ),
+                      trailing: isPlaying
+                          ? Icon(Icons.play_arrow)
+                          : (song is SongModel
+                          ? QueryArtworkWidget(
+                        id: song.id,
+                        type: ArtworkType.AUDIO,
+                        nullArtworkWidget: Icon(Icons.music_note),
+                      )
+                          : Icon(Icons.music_note)),
+                      title: isPlaying
+                          ? SizedBox(
+                        height: 20,
+                        child: Marquee(
+                          text: title,
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                          blankSpace: 60,
+                          velocity: 30,
+                          pauseAfterRound: Duration(seconds: 1),
+                          startPadding: 10,
+                        ),
+                      )
+                          : Text(title),
+                      subtitle: Text(artist),
                     ),
                   );
                 },
