@@ -52,7 +52,10 @@ class _SongListWidgetState extends State<SongListWidget> {
                     color: isPlaying ? Colors.orange.withOpacity(0.3) : null,
                     child: ListTile(
                       onTap: () async {
-                        await widget.controller.playSong(song);
+                        final isCurrent = widget.controller.currentSong?.uri == song.uri;
+                        if (!isCurrent) {
+                          await widget.controller.playSong(song);
+                        }
                         if (mounted) {
                           Navigator.push(
                             context,

@@ -42,6 +42,9 @@ class MusicController {
   }
 
   Future<void> playSong(dynamic song) async {
+    if (currentSong?.uri == song.uri) {
+      return; // já está tocando, não reinicia
+    }
     _currentSongIndex = songs.indexOf(song);
     final uri = song is SongModel ? song.uri! : song.uri;
     await _audioService.playFromUri(uri, song: song);
