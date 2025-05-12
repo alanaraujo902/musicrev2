@@ -10,7 +10,9 @@ class MusicController {
 
   factory MusicController() => _instance;
 
-  MusicController._internal();
+  MusicController._internal() {
+    _audioService.onSongComplete = _handleSongComplete;
+  }
 
   final _audioService = AudioService();
   final PlaylistService _playlistService = PlaylistService();
@@ -87,6 +89,14 @@ class MusicController {
     if (current != null) {
       _currentSongIndex = songs.indexWhere((s) => s.uri == current.uri);
     }
+  }
+
+  void _handleSongComplete() {
+    final current = currentSong;
+    if (current != null) {
+      current.isChecked = true;
+    }
+    playNext(); // já é um Future, mas não precisa esperar aqui
   }
 
   Future<void> persistOrderIfPlaylist() async {

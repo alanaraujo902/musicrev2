@@ -8,11 +8,17 @@ class AudioService {
   final AudioPlayer _audioPlayer = AudioPlayer();
   LocalSong? _lastPlayedLocalSong;
 
+  void Function()? onSongComplete;
+
   AudioService() {
     _audioPlayer.playerStateStream.listen((state) {
-      if (state.processingState == ProcessingState.completed &&
-          _lastPlayedLocalSong != null) {
-        _lastPlayedLocalSong!.isChecked = true;
+      if (state.processingState == ProcessingState.completed) {
+        if (_lastPlayedLocalSong != null) {
+          _lastPlayedLocalSong!.isChecked = true;
+        }
+        if (onSongComplete != null) {
+          onSongComplete!();
+        }
       }
     });
   }
