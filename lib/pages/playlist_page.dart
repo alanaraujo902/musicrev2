@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/playlist.dart';
 import '../services/playlist_service.dart';
 import 'playlist_songs_page.dart';
+import '../controllers/music_controller.dart';
 
 class PlaylistPage extends StatefulWidget {
   @override
@@ -48,7 +49,25 @@ class _PlaylistPageState extends State<PlaylistPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => PlaylistSongsPage(playlist: playlist),
+                  builder: (_) => PlaylistSongsPage(
+                    playlist: playlist,
+                    onOrderSaved: (updatedPlaylist) {
+                      final controller = MusicController();
+                      if (controller.currentSong != null &&
+                          updatedPlaylist.songs.any((s) => s.uri == controller.currentSong.uri)) {
+                        controller.loadPlaylist(updatedPlaylist);
+                      }
+
+                      setState(() {
+                        _playlists[index] = updatedPlaylist;
+                      });
+
+                      // Garante atualização visual ao retornar para a tela principal
+                      Future.microtask(() {
+                        Navigator.pop(context);
+                      });
+                    },
+                  ),
                 ),
               );
             },

@@ -13,6 +13,25 @@ class NowPlayingPage extends StatefulWidget {
 }
 
 class _NowPlayingPageState extends State<NowPlayingPage> {
+  String? lyrics;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLyrics();
+  }
+
+  void _loadLyrics() {
+    final title = widget.song.title.toLowerCase().replaceAll(RegExp(r'\.mp3$'), '');
+    final mockLyrics = {
+      'example': 'Esta é a letra da música exemplo.\nLinha 2...\nLinha 3...',
+    };
+
+    setState(() {
+      lyrics = mockLyrics[title] ?? 'Letra não disponível para esta música.';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentSong = widget.controller.currentSong;
@@ -26,7 +45,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
       body: Padding(
         padding: const EdgeInsets.all(32.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Icon(Icons.music_note, size: 100),
             SizedBox(height: 30),
@@ -107,6 +126,16 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
                   ],
                 );
               },
+            ),
+            SizedBox(height: 30),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Text(
+                  lyrics ?? "Carregando letra...",
+                  style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
           ],
         ),

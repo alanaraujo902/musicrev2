@@ -9,8 +9,13 @@ enum SortOption { alphabetical, reverseAlphabetical, byChecked, uncheckedFirst }
 
 class PlaylistSongsPage extends StatefulWidget {
   final Playlist playlist;
+  final void Function(Playlist)? onOrderSaved;
 
-  const PlaylistSongsPage({super.key, required this.playlist});
+  const PlaylistSongsPage({
+    super.key,
+    required this.playlist,
+    this.onOrderSaved,
+  });
 
   @override
   State<PlaylistSongsPage> createState() => _PlaylistSongsPageState();
@@ -55,6 +60,11 @@ class _PlaylistSongsPageState extends State<PlaylistSongsPage> {
     if (idx != -1) {
       all[idx] = updated;
       await playlistService.savePlaylists(all);
+
+      if (widget.onOrderSaved != null) {
+        widget.onOrderSaved!(updated);
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ordem salva com sucesso!')),
       );

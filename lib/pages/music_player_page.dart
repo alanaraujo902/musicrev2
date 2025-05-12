@@ -86,8 +86,11 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
   }
 
   void _loadPlaylist(Playlist playlist) {
+    controller.loadPlaylist(playlist);
+    final idx = playlists.indexWhere((p) => p.name == playlist.name);
+    if (idx != -1) playlists[idx] = playlist;
+
     setState(() {
-      controller.loadPlaylist(playlist);
       hasSongs = playlist.songs.isNotEmpty;
     });
   }
