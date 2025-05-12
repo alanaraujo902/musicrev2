@@ -40,16 +40,17 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
               style: TextStyle(fontSize: 18, color: Colors.grey),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 20),
-            ElevatedButton.icon(
-              icon: Icon(Icons.check),
-              label: Text("Marcar como ouvida"),
-              onPressed: () {
-                setState(() {
-                  if (currentSong != null) currentSong.isChecked = true;
-                });
-              },
-            ),
+            SizedBox(height: 30),
+            if (currentSong != null)
+              CheckboxListTile(
+                title: Text("Marcar como ouvida"),
+                value: currentSong.isChecked,
+                onChanged: (value) {
+                  setState(() {
+                    currentSong.isChecked = value ?? false;
+                  });
+                },
+              ),
             SizedBox(height: 20),
             StreamBuilder<bool>(
               stream: widget.controller.playingStream,
