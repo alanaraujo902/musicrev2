@@ -40,7 +40,13 @@ class PlaylistCard extends StatelessWidget {
                       child: Text("+ song", textAlign: TextAlign.center),
                     ),
                     ElevatedButton(
-                      onPressed: () => onRemoveSongs(playlist),
+                      onPressed: () {
+                        showRemoveFromPlaylistDialog(
+                          context: context,
+                          playlist: playlist,
+                          onUpdated: onRemoveSongs,
+                        );
+                      },
                       child: Text("- song", textAlign: TextAlign.center),
                     ),
                     ElevatedButton(
@@ -57,4 +63,3 @@ class PlaylistCard extends StatelessWidget {
     );
   }
 }
-
