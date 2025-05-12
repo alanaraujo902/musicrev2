@@ -63,6 +63,14 @@ class AudioService {
 
   Stream<bool> get playingStream => _audioPlayer.playingStream;
 
+  Stream<Duration> get positionStream => _audioPlayer.positionStream;
+
+  Stream<Duration?> get durationStream => _audioPlayer.durationStream;
+
+  Future<void> seek(Duration position) async {
+    await _audioPlayer.seek(position);
+  }
+
   void dispose() {
     _audioPlayer.dispose();
   }

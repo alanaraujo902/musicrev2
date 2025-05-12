@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import '../controllers/music_controller.dart';
 
 class NowPlayingPage extends StatefulWidget {
@@ -51,6 +52,26 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
                   });
                 },
               ),
+            SizedBox(height: 20),
+            StreamBuilder<Duration>(
+              stream: widget.controller.positionStream,
+              builder: (context, positionSnapshot) {
+                final position = positionSnapshot.data ?? Duration.zero;
+                return StreamBuilder<Duration?>(
+                  stream: widget.controller.durationStream,
+                  builder: (context, durationSnapshot) {
+                    final duration = durationSnapshot.data ?? Duration.zero;
+                    return ProgressBar(
+                      progress: position,
+                      total: duration,
+                      onSeek: (duration) {
+                        widget.controller.seek(duration);
+                      },
+                    );
+                  },
+                );
+              },
+            ),
             SizedBox(height: 20),
             StreamBuilder<bool>(
               stream: widget.controller.playingStream,

@@ -87,7 +87,7 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
 
   void _loadPlaylist(Playlist playlist) {
     setState(() {
-      controller.songs = playlist.songs;
+      controller.loadPlaylist(playlist);
       hasSongs = playlist.songs.isNotEmpty;
     });
   }

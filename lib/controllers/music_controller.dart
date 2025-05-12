@@ -64,6 +64,14 @@ class MusicController {
 
   Stream<bool> get playingStream => _audioService.playingStream;
 
+  Stream<Duration> get positionStream => _audioService.positionStream;
+
+  Stream<Duration?> get durationStream => _audioService.durationStream;
+
+  Future<void> seek(Duration position) async {
+    await _audioService.seek(position);
+  }
+
   Future<void> loadSongsFromDirectory(String directoryPath) async {
     _loadedPlaylist = null;
     songs = await _audioService.loadSongs(directoryPath: directoryPath);
