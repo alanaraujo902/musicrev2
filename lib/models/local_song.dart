@@ -4,6 +4,7 @@ class LocalSong {
   final String artist;
   final String uri;
   bool isChecked;
+  bool isFavorite;
 
   LocalSong({
     required this.id,
@@ -11,6 +12,7 @@ class LocalSong {
     required this.artist,
     required this.uri,
     this.isChecked = false,
+    this.isFavorite = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -19,6 +21,7 @@ class LocalSong {
     'artist': artist,
     'uri': uri,
     'isChecked': isChecked,
+    'isFavorite': isFavorite,
   };
 
   factory LocalSong.fromJson(Map<String, dynamic> json) => LocalSong(
@@ -27,5 +30,6 @@ class LocalSong {
     artist: json['artist'],
     uri: json['uri'],
     isChecked: json['isChecked'] ?? false,
+    isFavorite: json['isFavorite'] ?? false,
   );
 }

@@ -67,12 +67,24 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
                   CheckboxListTile(
                     title: Text("Marcar como ouvida"),
                     value: currentSong.isChecked,
-                    onChanged: (value) {
-                      setState(() {
-                        currentSong.isChecked = value ?? false;
-                      });
+                    onChanged: (value) async {
+                      await widget.controller.toggleChecked(currentSong, value ?? false);
+                      setState(() {});
                     },
                   ),
+
+                IconButton(
+                  icon: Icon(
+                    currentSong.isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: currentSong.isFavorite ? Colors.red : null,
+                  ),
+                  onPressed: () async {
+                    await widget.controller.toggleFavorite(currentSong);
+                    setState(() {});
+                  },
+                ),
+
+
                 SizedBox(height: 20),
                 StreamBuilder<Duration>(
                   stream: widget.controller.positionStream,

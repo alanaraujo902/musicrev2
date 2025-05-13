@@ -68,13 +68,19 @@ class _SongListWidgetState extends State<SongListWidget> {
                           ).then((_) => setState(() {}));
                         }
                       },
-                      leading: Checkbox(
-                        value: song.isChecked,
-                        onChanged: (value) {
-                          setState(() {
-                            song.isChecked = value ?? false;
-                          });
-                        },
+                      leading: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Checkbox(
+                            value: song.isChecked,
+                            onChanged: (value) async {
+                              await widget.controller.toggleChecked(song, value ?? false);
+                              setState(() {});
+                            },
+                          ),
+                          if (song.isFavorite)
+                            Icon(Icons.favorite, color: Colors.red, size: 18),
+                        ],
                       ),
                       trailing: isPlaying
                           ? Icon(Icons.play_arrow)

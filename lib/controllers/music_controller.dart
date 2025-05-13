@@ -122,6 +122,33 @@ class MusicController {
     }
   }
 
+  Future<void> toggleFavorite(LocalSong song) async {
+    song.isFavorite = !song.isFavorite;
+    await _persistSongState(song);
+  }
+
+  Future<void> toggleChecked(LocalSong song, bool value) async {
+    song.isChecked = value;
+    await _persistSongState(song);
+  }
+
+  Future<void> _persistSongState(LocalSong updatedSong) async {
+    if (_loadedPlaylist != null) {
+      final index = _loadedPlaylist!.songs.indexWhere((s) => s.uri == updatedSong.uri);
+      if (index != -1) {
+        _loadedPlaylist!.songs[index] = updatedSong;
+        final all = await _playlistService.loadPlaylists();
+        final idx = all.indexWhere((p) => p.name == _loadedPlaylist!.name);
+        if (idx != -1) {
+          all[idx] = _loadedPlaylist!;
+          await _playlistService.savePlaylists(all);
+        }
+      }
+    }
+  }
+
+
+
   void dispose() {
     _audioService.dispose();
   }
