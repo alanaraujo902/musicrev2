@@ -30,7 +30,7 @@ class _PlaylistSongsPageState extends State<PlaylistSongsPage> {
   void initState() {
     super.initState();
     sortedSongs = List.of(widget.playlist.songs);
-    controller.songs = sortedSongs;
+    controller.loadPlaylist(widget.playlist); // CORREÇÃO AQUI
   }
 
   void _sortSongs(SortOption option) {

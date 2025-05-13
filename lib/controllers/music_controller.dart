@@ -5,21 +5,22 @@ import '../models/local_song.dart';
 import '../services/playlist_service.dart';
 import '../models/playlist.dart';
 import 'package:flutter/foundation.dart';
+import '../services/checked_state_service.dart';
+
 
 
 class MusicController {
   static final MusicController _instance = MusicController._internal();
-
   factory MusicController() => _instance;
 
-  MusicController._internal() {
-    _audioService.onSongComplete = _handleSongComplete;
-  }
-
+  final CheckedStateService _checkedStateService = CheckedStateService();
   final _audioService = AudioService();
   final PlaylistService _playlistService = PlaylistService();
   final ValueNotifier<dynamic> currentSongNotifier = ValueNotifier(null);
 
+  MusicController._internal() {
+    _audioService.onSongComplete = _handleSongComplete;
+  }
 
   List<dynamic> songs = [];
   int _currentSongIndex = -1;
@@ -86,6 +87,13 @@ class MusicController {
   Future<void> loadSongsFromDirectory(String directoryPath) async {
     _loadedPlaylist = null;
     songs = await _audioService.loadSongs(directoryPath: directoryPath);
+
+    final checkedStates = await _checkedStateService.loadCheckedStates();
+    for (var song in songs) {
+      if (checkedStates.containsKey(song.uri)) {
+        song.isChecked = checkedStates[song.uri]!;
+      }
+    }
   }
 
   void loadPlaylist(Playlist playlist) {
@@ -129,7 +137,11 @@ class MusicController {
 
   Future<void> toggleChecked(LocalSong song, bool value) async {
     song.isChecked = value;
-    await _persistSongState(song);
+    if (_loadedPlaylist != null) {
+      await _persistSongState(song);
+    } else {
+      await _checkedStateService.saveCheckedState(song.uri, value);
+    }
   }
 
   Future<void> _persistSongState(LocalSong updatedSong) async {
