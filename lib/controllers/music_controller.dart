@@ -24,6 +24,7 @@ class MusicController {
 
   List<dynamic> songs = [];
   int _currentSongIndex = -1;
+  dynamic _currentSong;
   Playlist? _loadedPlaylist;
 
   Future<void> init() async {
@@ -46,7 +47,8 @@ class MusicController {
     if (currentSong?.uri == song.uri) {
       return; // já está tocando, não reinicia
     }
-    _currentSongIndex = songs.indexOf(song);
+    _currentSong = song;
+    _currentSongIndex = songs.indexWhere((s) => s.uri == song.uri);
     final uri = song is SongModel ? song.uri! : song.uri;
     await _audioService.playFromUri(uri, song: song);
     currentSongNotifier.value = song;
@@ -69,10 +71,7 @@ class MusicController {
     }
   }
 
-  dynamic get currentSong =>
-      (_currentSongIndex >= 0 && _currentSongIndex < songs.length)
-          ? songs[_currentSongIndex]
-          : null;
+  dynamic get currentSong => _currentSong;
 
   Stream<bool> get playingStream => _audioService.playingStream;
 
@@ -99,7 +98,9 @@ class MusicController {
   void loadPlaylist(Playlist playlist) {
     _loadedPlaylist = playlist;
     songs = playlist.songs;
+    updateCurrentIndex(); // Garante que o índice corresponda à música atual
   }
+
 
   void updateCurrentIndex() {
     final current = currentSong;
