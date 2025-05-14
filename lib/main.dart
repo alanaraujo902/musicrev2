@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'pages/music_player_page.dart';
-import 'pages/playlist_page.dart';
+import 'pages/playlist_page//playlist_page.dart';
 
 void main() {
   runApp(MyApp());

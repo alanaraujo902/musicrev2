@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/playlist.dart';
+import 'package:untitled1/models/playlist.dart';
 import '../dialogs/remove_from_playlist_dialog.dart';
 
 class PlaylistCard extends StatelessWidget {

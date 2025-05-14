@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
-import '../../models/playlist.dart';
+//import '../../models/playlist.dart';
+import 'package:untitled1/models/playlist.dart';
 
 abstract class MusicControllerBase {
   List<dynamic> songs = [];
