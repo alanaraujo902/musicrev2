@@ -16,7 +16,7 @@ class NowPlayingControls extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconButton(
-              icon: Icon(Icons.skip_previous, color: Colors.white),
+              icon: Icon(Icons.skip_previous, color: Colors.black),
               onPressed: controller.playPrevious,
               iconSize: 40,
             ),
@@ -25,14 +25,14 @@ class NowPlayingControls extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 shape: CircleBorder(),
                 padding: EdgeInsets.all(20),
-                backgroundColor: Colors.purpleAccent,
+                backgroundColor: Colors.purpleAccent.shade100,
               ),
-              child: Icon(isPlaying ? Icons.pause : Icons.play_arrow, size: 32),
+              child: Icon(isPlaying ? Icons.pause : Icons.play_arrow, size: 32, color: Colors.black),
               onPressed: controller.togglePlayPause,
             ),
             SizedBox(width: 20),
             IconButton(
-              icon: Icon(Icons.skip_next, color: Colors.white),
+              icon: Icon(Icons.skip_next, color: Colors.black),
               onPressed: controller.playNext,
               iconSize: 40,
             ),

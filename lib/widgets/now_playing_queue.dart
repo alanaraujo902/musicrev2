@@ -21,9 +21,9 @@ class NowPlayingQueue extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                Icon(Icons.queue_music, color: Colors.white),
+                Icon(Icons.queue_music, color: Colors.black),
                 SizedBox(width: 10),
-                Text("Próximas Músicas", style: TextStyle(color: Colors.white)),
+                Text("Próximas Músicas", style: TextStyle(color: Colors.black)),
               ],
             ),
           ),
@@ -33,9 +33,9 @@ class NowPlayingQueue extends StatelessWidget {
               itemBuilder: (context, index) {
                 final song = remaining[index];
                 return ListTile(
-                  title: Text(song.title, style: TextStyle(color: Colors.white)),
-                  subtitle: Text(song.artist, style: TextStyle(color: Colors.grey)),
-                  trailing: Icon(Icons.more_vert, color: Colors.white),
+                  title: Text(song.title, style: TextStyle(color: Colors.black)),
+                  subtitle: Text(song.artist, style: TextStyle(color: Colors.grey.shade600)),
+                  trailing: Icon(Icons.more_vert, color: Colors.black),
                   onTap: () async {
                     await controller.playSong(song);
                     onSongTap();
