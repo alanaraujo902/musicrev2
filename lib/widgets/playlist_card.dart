@@ -27,7 +27,7 @@ class PlaylistCard extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                playlist.name,
+                playlist.isChecked ? "${playlist.name} ✔️" : playlist.name,
                 style: TextStyle(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -63,3 +63,4 @@ class PlaylistCard extends StatelessWidget {
     );
   }
 }
+

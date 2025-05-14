@@ -18,20 +18,12 @@ class MusicPlayerPage extends StatefulWidget {
 class _MusicPlayerPageState extends State<MusicPlayerPage> {
   final controller = MusicController();
   final PlaylistService playlistService = PlaylistService();
-  List<Playlist> playlists = [];
   bool hasSongs = false;
 
   @override
   void initState() {
     super.initState();
-    _loadPlaylists();
-  }
-
-  Future<void> _loadPlaylists() async {
-    final loaded = await playlistService.loadPlaylists();
-    setState(() {
-      playlists = loaded;
-    });
+    controller.loadPlaylistsToNotifier();
   }
 
   Future<void> _selectDirectory() async {
@@ -62,9 +54,10 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
       context: context,
       songs: controller.songs,
       onSaved: (playlist) async {
-        playlists.add(playlist);
-        await playlistService.savePlaylists(playlists);
-        await _loadPlaylists();
+        final all = await playlistService.loadPlaylists();
+        all.add(playlist);
+        await playlistService.savePlaylists(all);
+        controller.playlistsNotifier.value = List.from(all);
       },
     );
   }
@@ -75,23 +68,25 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
       availableSongs: controller.songs,
       playlist: playlist,
       onUpdated: (updatedPlaylist) async {
-        final index = playlists.indexWhere((p) => p.name == updatedPlaylist.name);
-        if (index != -1) {
-          playlists[index] = updatedPlaylist;
-          await playlistService.savePlaylists(playlists);
-          setState(() {});
+        final all = await playlistService.loadPlaylists();
+        final idx = all.indexWhere((p) => p.name == updatedPlaylist.name);
+        if (idx != -1) {
+          all[idx] = updatedPlaylist;
+          await playlistService.savePlaylists(all);
+          controller.playlistsNotifier.value = List.from(all);
         }
       },
     );
   }
 
-  void _loadPlaylist(Playlist playlist) {
-    controller.loadPlaylist(playlist);
-    final idx = playlists.indexWhere((p) => p.name == playlist.name);
-    if (idx != -1) playlists[idx] = playlist;
+  void _loadPlaylist(Playlist playlist) async {
+    final all = await playlistService.loadPlaylists();
+    final updated = all.firstWhere((p) => p.name == playlist.name, orElse: () => playlist);
+
+    controller.loadPlaylist(updated);
 
     setState(() {
-      hasSongs = playlist.songs.isNotEmpty;
+      hasSongs = updated.songs.isNotEmpty;
     });
   }
 
@@ -117,16 +112,16 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
               leading: Icon(Icons.library_music),
               title: Text('Músicas'),
               onTap: () {
-                Navigator.pop(context); // Fecha o drawer
-                Navigator.pushNamed(context, '/'); // Para Músicas
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/');
               },
             ),
             ListTile(
               leading: Icon(Icons.playlist_play),
               title: Text('Playlists'),
               onTap: () {
-                Navigator.pop(context); // Fecha o drawer
-                Navigator.pushNamed(context, '/playlists'); // Vai para a tela de playlists
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/playlists');
               },
             ),
           ],
@@ -151,21 +146,27 @@ class _MusicPlayerPageState extends State<MusicPlayerPage> {
             Text("Playlists Salvas", style: TextStyle(fontWeight: FontWeight.bold)),
             SizedBox(
               height: 200,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: playlists.length,
-                itemBuilder: (context, index) {
-                  return PlaylistCard(
-                    playlist: playlists[index],
-                    onAddSongs: _addToPlaylist,
-                    onLoad: _loadPlaylist,
-                    onRemoveSongs: (updated) async {
-                      final idx = playlists.indexWhere((p) => p.name == updated.name);
-                      if (idx != -1) {
-                        playlists[idx] = updated;
-                        await playlistService.savePlaylists(playlists);
-                        setState(() {});
-                      }
+              child: ValueListenableBuilder<List<Playlist>>(
+                valueListenable: controller.playlistsNotifier,
+                builder: (context, playlists, _) {
+                  return ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: playlists.length,
+                    itemBuilder: (context, index) {
+                      return PlaylistCard(
+                        playlist: playlists[index],
+                        onAddSongs: _addToPlaylist,
+                        onLoad: _loadPlaylist,
+                        onRemoveSongs: (updated) async {
+                          final all = await playlistService.loadPlaylists();
+                          final idx = all.indexWhere((p) => p.name == updated.name);
+                          if (idx != -1) {
+                            all[idx] = updated;
+                            await playlistService.savePlaylists(all);
+                            controller.playlistsNotifier.value = List.from(all);
+                          }
+                        },
+                      );
                     },
                   );
                 },

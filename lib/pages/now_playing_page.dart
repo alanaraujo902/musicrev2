@@ -69,8 +69,10 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
                     value: currentSong.isChecked,
                     onChanged: (value) async {
                       await widget.controller.toggleChecked(currentSong, value ?? false);
-                      setState(() {});
+                      await widget.controller.evaluatePlaylistCheckedStatus(); // garante update do isChecked da playlist
+                      setState(() {}); // força rebuild da UI com o novo status
                     },
+
                   ),
 
                 IconButton(

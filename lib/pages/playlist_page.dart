@@ -196,7 +196,11 @@ class _PlaylistPageState extends State<PlaylistPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(playlist.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(
+                        playlist.isChecked ? '${playlist.name} ✔️' : playlist.name,
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+
                       Text('${playlist.songs.length} músicas', style: TextStyle(fontSize: 13, color: Colors.grey)),
                     ],
                   ),
@@ -235,9 +239,20 @@ class _PlaylistPageState extends State<PlaylistPage> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(child: Text(folder.name, style: TextStyle(fontWeight: FontWeight.bold))),
-            IconButton(icon: Icon(Icons.edit, color: Colors.blue), onPressed: () => _renameFolder(folder)),
-            IconButton(icon: Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteFolder(folder)),
+            Expanded(
+              child: Text(
+                folder.isChecked ? '${folder.name} ✔️' : folder.name,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.edit, color: Colors.blue),
+              onPressed: () => _renameFolder(folder),
+            ),
+            IconButton(
+              icon: Icon(Icons.delete, color: Colors.red),
+              onPressed: () => _deleteFolder(folder),
+            ),
             PopupMenuButton<String>(
               icon: Icon(Icons.sort),
               onSelected: (value) => _sortFolderPlaylists(folder, value),
@@ -278,6 +293,7 @@ class _PlaylistPageState extends State<PlaylistPage> {
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {

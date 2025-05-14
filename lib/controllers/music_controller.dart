@@ -6,7 +6,7 @@ import '../services/playlist_service.dart';
 import '../models/playlist.dart';
 import 'package:flutter/foundation.dart';
 import '../services/checked_state_service.dart';
-
+import '../services/playlist_folder_service.dart';
 
 
 class MusicController {
@@ -17,6 +17,7 @@ class MusicController {
   final _audioService = AudioService();
   final PlaylistService _playlistService = PlaylistService();
   final ValueNotifier<dynamic> currentSongNotifier = ValueNotifier(null);
+  final ValueNotifier<List<Playlist>> playlistsNotifier = ValueNotifier([]);
 
   MusicController._internal() {
     _audioService.onSongComplete = _handleSongComplete;
@@ -43,13 +44,30 @@ class MusicController {
     return await _requestPermissions();
   }
 
+  Future<void> loadPlaylistsToNotifier() async {
+    final loaded = await _playlistService.loadPlaylists();
+    playlistsNotifier.value = loaded;
+  }
+
   Future<void> playSong(dynamic song) async {
-    if (currentSong?.uri == song.uri) {
-      return; // já está tocando, não reinicia
-    }
+    if (currentSong?.uri == song.uri) return;
+
     _currentSong = song;
     _currentSongIndex = songs.indexWhere((s) => s.uri == song.uri);
     final uri = song is SongModel ? song.uri! : song.uri;
+
+    // 🔧 Se a playlist está carregada, verifique se isso era a última música faltando
+    if (_loadedPlaylist != null) {
+      final uriSet = _loadedPlaylist!.songs.map((s) => s.uri).toSet();
+      final unchecked = _loadedPlaylist!.songs.where((s) => !s.isChecked).toList();
+
+      if (unchecked.length == 1 && unchecked.first.uri == song.uri) {
+        song.isChecked = true;
+        await _persistSongState(song);
+        await evaluatePlaylistCheckedStatus();
+      }
+    }
+
     await _audioService.playFromUri(uri, song: song);
     currentSongNotifier.value = song;
   }
@@ -61,7 +79,6 @@ class MusicController {
   Future<void> playNext() async {
     if (_currentSongIndex < songs.length - 1) {
       await playSong(songs[_currentSongIndex + 1]);
-      currentSongNotifier.value = currentSong;
     }
   }
 
@@ -72,11 +89,8 @@ class MusicController {
   }
 
   dynamic get currentSong => _currentSong;
-
   Stream<bool> get playingStream => _audioService.playingStream;
-
   Stream<Duration> get positionStream => _audioService.positionStream;
-
   Stream<Duration?> get durationStream => _audioService.durationStream;
 
   Future<void> seek(Duration position) async {
@@ -98,9 +112,8 @@ class MusicController {
   void loadPlaylist(Playlist playlist) {
     _loadedPlaylist = playlist;
     songs = playlist.songs;
-    updateCurrentIndex(); // Garante que o índice corresponda à música atual
+    updateCurrentIndex();
   }
-
 
   void updateCurrentIndex() {
     final current = currentSong;
@@ -113,20 +126,27 @@ class MusicController {
     final current = currentSong;
     if (current != null) {
       current.isChecked = true;
+      if (_loadedPlaylist != null) {
+        _persistSongState(current);
+        evaluatePlaylistCheckedStatus();
+      }
     }
     playNext();
   }
 
-
-
   Future<void> persistOrderIfPlaylist() async {
     if (_loadedPlaylist != null) {
-      final updated = Playlist(name: _loadedPlaylist!.name, songs: List<LocalSong>.from(songs));
+      final updated = Playlist(
+        name: _loadedPlaylist!.name,
+        songs: List<LocalSong>.from(songs),
+        isChecked: _loadedPlaylist!.isChecked,
+      );
       final all = await _playlistService.loadPlaylists();
       final idx = all.indexWhere((p) => p.name == _loadedPlaylist!.name);
       if (idx != -1) {
         all[idx] = updated;
         await _playlistService.savePlaylists(all);
+        playlistsNotifier.value = List.from(all);
       }
     }
   }
@@ -138,8 +158,10 @@ class MusicController {
 
   Future<void> toggleChecked(LocalSong song, bool value) async {
     song.isChecked = value;
+
     if (_loadedPlaylist != null) {
       await _persistSongState(song);
+      await evaluatePlaylistCheckedStatus(); // <-- AQUI, agora com await
     } else {
       await _checkedStateService.saveCheckedState(song.uri, value);
     }
@@ -155,11 +177,49 @@ class MusicController {
         if (idx != -1) {
           all[idx] = _loadedPlaylist!;
           await _playlistService.savePlaylists(all);
+          playlistsNotifier.value = List.from(all);
         }
       }
     }
   }
 
+  Future<void> evaluatePlaylistCheckedStatus({VoidCallback? onStatusChanged}) async {
+
+    if (_loadedPlaylist != null) {
+      final allChecked = _loadedPlaylist!.songs.every((s) => s.isChecked);
+      if (_loadedPlaylist!.isChecked != allChecked) {
+        _loadedPlaylist!.isChecked = allChecked;
+        final all = await _playlistService.loadPlaylists();
+        final idx = all.indexWhere((p) => p.name == _loadedPlaylist!.name);
+        if (idx != -1) {
+          all[idx] = _loadedPlaylist!;
+          await _playlistService.savePlaylists(all);
+          playlistsNotifier.value = List.from(all);
+          await evaluateFolderCheckedStatus();
+          if (onStatusChanged != null) onStatusChanged();
+        }
+      }
+    }
+  }
+
+
+  Future<void> evaluateFolderCheckedStatus() async {
+    final folderService = PlaylistFolderService();
+    final folders = await folderService.loadFolders();
+
+    bool changed = false;
+    for (var folder in folders) {
+      final allChecked = folder.playlists.isNotEmpty && folder.playlists.every((p) => p.isChecked);
+      if (folder.isChecked != allChecked) {
+        folder.isChecked = allChecked;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await folderService.saveFolders(folders);
+    }
+  }
 
 
   void dispose() {
