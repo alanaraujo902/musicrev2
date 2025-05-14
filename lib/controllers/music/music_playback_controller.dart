@@ -1,8 +1,11 @@
 import '../../services/audio_service.dart';
 import 'package:flutter/foundation.dart';
+import 'music_base.dart'; // ✅ Importar a base corretamente
 
-mixin MusicPlaybackController {
-  final _audioService = AudioService();
+mixin MusicPlaybackController on MusicControllerBase {
+  final AudioService _audioService = AudioService();
+  AudioService get audioService => _audioService;
+
   final ValueNotifier<dynamic> currentSongNotifier = ValueNotifier(null);
 
   List<dynamic> songs = [];

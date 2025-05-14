@@ -11,6 +11,18 @@ class MusicController extends MusicControllerBase
         MusicPlaylistController,
         MusicStateController {
   static final MusicController _instance = MusicController._internal();
-  factory MusicController() => _instance;
+  factory MusicController() {
+    _instance._initializeController();
+    return _instance;
+  }
+
   MusicController._internal();
+
+  void _initializeController() {
+    audioService.onSongComplete = () async {
+      if (currentSongIndex < songs.length - 1) {
+        await playNext();
+      }
+    };
+  }
 }
