@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import '../models/local_song.dart';
-import '../controllers/music_controller.dart';
+//import '../controllers/music_controller.dart';
+import '../controllers/music/music_controller.dart';
 import '../pages/now_playing_page.dart';
 import 'package:flutter/foundation.dart';
 

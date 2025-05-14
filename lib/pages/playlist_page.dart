@@ -4,7 +4,9 @@ import '../models/playlist_folder.dart';
 import '../services/playlist_service.dart';
 import '../services/playlist_folder_service.dart';
 import 'playlist_songs_page.dart';
-import '../controllers/music_controller.dart';
+//import '../controllers/music_controller.dart';
+import '../controllers/music/music_controller.dart';
+
 
 class PlaylistPage extends StatefulWidget {
   @override

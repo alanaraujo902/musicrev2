@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
-import '../controllers/music_controller.dart';
+//import '../controllers/music_controller.dart';
+import '../controllers/music/music_controller.dart';
+
 
 class NowPlayingPage extends StatefulWidget {
   final dynamic song;

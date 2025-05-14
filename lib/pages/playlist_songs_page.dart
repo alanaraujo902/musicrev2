@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/playlist.dart';
 import '../models/local_song.dart';
-import '../controllers/music_controller.dart';
+//import '../controllers/music_controller.dart';
+import '../controllers/music/music_controller.dart';
 import '../services/playlist_service.dart';
 import '../widgets/song_list_widget.dart';
 
