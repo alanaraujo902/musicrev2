@@ -31,16 +31,27 @@ mixin MusicStateController on MusicControllerBase {
       final index = loadedPlaylist!.songs.indexWhere((s) => s.uri == updatedSong.uri);
       if (index != -1) {
         loadedPlaylist!.songs[index] = updatedSong;
+
         final all = await _playlistService.loadPlaylists();
         final idx = all.indexWhere((p) => p.name == loadedPlaylist!.name);
         if (idx != -1) {
-          all[idx] = loadedPlaylist!;
+          // ✅ recria a playlist com nova instância
+          final updatedPlaylist = Playlist(
+            name: loadedPlaylist!.name,
+            songs: List<LocalSong>.from(loadedPlaylist!.songs),
+            isChecked: loadedPlaylist!.isChecked,
+          );
+          all[idx] = updatedPlaylist;
           await _playlistService.savePlaylists(all);
-          playlistsNotifier.value = List.from(all);
+
+          // ✅ notifica com nova lista de instâncias
+          playlistsNotifier.value = List<Playlist>.from(all);
+          loadedPlaylist = updatedPlaylist; // atualiza referência também
         }
       }
     }
   }
+
 
   Future<void> evaluatePlaylistCheckedStatus({VoidCallback? onStatusChanged}) async {
     if (loadedPlaylist != null) {

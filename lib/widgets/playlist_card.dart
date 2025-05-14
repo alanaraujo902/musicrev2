@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:untitled1/models/playlist.dart';
 import '../dialogs/remove_from_playlist_dialog.dart';
+import 'package:untitled1/controllers/music/music_controller.dart';
 
 class PlaylistCard extends StatelessWidget {
   final Playlist playlist;
@@ -26,10 +27,19 @@ class PlaylistCard extends StatelessWidget {
           padding: const EdgeInsets.all(12.0),
           child: Column(
             children: [
-              Text(
-                playlist.isChecked ? "${playlist.name} ✔️" : playlist.name,
-                style: TextStyle(fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
+              ValueListenableBuilder<List<Playlist>>(
+                valueListenable: MusicController().playlistsNotifier,
+                builder: (_, playlists, __) {
+                  final updated = playlists.firstWhere(
+                        (p) => p.name == playlist.name,
+                    orElse: () => playlist,
+                  );
+                  return Text(
+                    updated.isChecked ? "${updated.name} ✔️" : updated.name,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  );
+                },
               ),
               const SizedBox(height: 10),
               Flexible(
@@ -63,4 +73,3 @@ class PlaylistCard extends StatelessWidget {
     );
   }
 }
-

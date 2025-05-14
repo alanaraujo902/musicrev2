@@ -1,9 +1,7 @@
-// Cartão de playlist reutilizável:
-
 import 'package:flutter/material.dart';
 import 'package:untitled1/models/playlist.dart';
 import 'package:untitled1/models/playlist_folder.dart';
-
+import 'package:untitled1/controllers/music/music_controller.dart';
 
 class PlaylistCardTile extends StatelessWidget {
   final Playlist playlist;
@@ -29,7 +27,16 @@ class PlaylistCardTile extends StatelessWidget {
         child: ListTile(
           onTap: onTap,
           leading: Icon(Icons.library_music),
-          title: Text(playlist.isChecked ? '${playlist.name} ✔️' : playlist.name),
+          title: ValueListenableBuilder<List<Playlist>>(
+            valueListenable: MusicController().playlistsNotifier,
+            builder: (_, playlists, __) {
+              final updated = playlists.firstWhere(
+                    (p) => p.name == playlist.name,
+                orElse: () => playlist,
+              );
+              return Text(updated.isChecked ? '${updated.name} ✔️' : updated.name);
+            },
+          ),
           subtitle: Text('${playlist.songs.length} músicas'),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,

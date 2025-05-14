@@ -76,6 +76,9 @@ class _SongListWidgetState extends State<SongListWidget> {
                             value: song.isChecked,
                             onChanged: (value) async {
                               await widget.controller.toggleChecked(song, value ?? false);
+                              await widget.controller.evaluatePlaylistCheckedStatus(
+                                onStatusChanged: () => setState(() {}),
+                              );
                               setState(() {});
                             },
                           ),
