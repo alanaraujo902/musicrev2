@@ -54,4 +54,3 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
     );
   }
 }
-
