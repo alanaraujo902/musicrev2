@@ -73,11 +73,22 @@ mixin MusicStateController on MusicControllerBase {
 
   Future<void> evaluateFolderCheckedStatus() async {
     final folderService = PlaylistFolderService();
+    final playlistService = PlaylistService();
+
     final folders = await folderService.loadFolders();
+    final allPlaylists = await playlistService.loadPlaylists();
 
     bool changed = false;
+
     for (var folder in folders) {
+      final upToDatePlaylists = folder.playlists.map((fp) {
+        return allPlaylists.firstWhere((p) => p.name == fp.name, orElse: () => fp);
+      }).toList();
+
+      folder.playlists = upToDatePlaylists;
+
       final allChecked = folder.playlists.isNotEmpty && folder.playlists.every((p) => p.isChecked);
+
       if (folder.isChecked != allChecked) {
         folder.isChecked = allChecked;
         changed = true;
