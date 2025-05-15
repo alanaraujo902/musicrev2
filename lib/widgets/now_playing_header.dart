@@ -106,6 +106,22 @@ class _NowPlayingHeaderState extends State<NowPlayingHeader> {
                             ),
                           ],
                         ),
+                        SizedBox(height: 10),
+                        StreamBuilder<Duration?>(
+                          stream: MusicController().durationStream,
+                          builder: (context, snapshot) {
+                            final duration = snapshot.data ?? Duration.zero;
+                            final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+                            final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+                            return Text(
+                              "Duração: $minutes:$seconds",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),

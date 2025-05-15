@@ -10,6 +10,7 @@ class AudioService {
 
   void Function()? onSongComplete;
 
+
   AudioService() {
     _audioPlayer.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
