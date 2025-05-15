@@ -7,6 +7,8 @@ class AudioService {
   final OnAudioQuery _audioQuery = OnAudioQuery();
   final AudioPlayer _audioPlayer = AudioPlayer();
   LocalSong? _lastPlayedLocalSong;
+  final Map<String, Duration?> _durationCache = {};           // ⬅️ CACHE
+
 
   void Function()? onSongComplete;
 
@@ -24,29 +26,51 @@ class AudioService {
     });
   }
 
+  /// Recupera (e armazena em cache) a duração de um arquivo local.
+  Future<Duration?> fetchDuration(String uri) async {
+    if (_durationCache.containsKey(uri)) return _durationCache[uri];
+
+    final player = AudioPlayer();
+    try {
+      await player.setAudioSource(AudioSource.uri(Uri.parse(uri)));
+      final dur = player.duration;
+      _durationCache[uri] = dur;
+      return dur;
+    } finally {
+      await player.dispose();
+    }
+  }
+
   Future<List<dynamic>> loadSongs({String? directoryPath}) async {
     if (directoryPath != null) {
       final directory = Directory(directoryPath);
       final files = directory
           .listSync(recursive: true)
-          .where((file) => file.path.endsWith('.mp3'))
+          .where((f) => f.path.endsWith('.mp3'))
           .toList();
 
       List<LocalSong> songs = [];
       for (var file in files) {
-        final song = LocalSong(
+        final uri = file.uri.toString();
+        final dur = await fetchDuration(uri);                 // ⬅️
+
+        songs.add(LocalSong(
           id: file.hashCode,
           title: file.uri.pathSegments.last,
           artist: 'Desconhecido',
-          uri: file.uri.toString(),
-        );
-        songs.add(song);
+          uri: uri,
+          durationMillis: dur?.inMilliseconds,                // ⬅️
+        ));
       }
       return songs;
     } else {
-      return await _audioQuery.querySongs();
+      // Mantém funcionalidade original – SongModel já expõe duration (ms ou null).
+      // Caso o valor venha null, tratamos na UI; não é possível alterar o campo (somente-leitura).
+      final result = await _audioQuery.querySongs();
+      return result; // List<SongModel>
     }
   }
+
 
   Future<void> playFromUri(String uri, {LocalSong? song}) async {
     try {
