@@ -19,6 +19,14 @@ class PlaylistCardTile extends StatelessWidget {
     this.folder,
   });
 
+  bool _isPlaying(Playlist p) {
+    final controller = MusicController();
+    final current = controller.currentSong;
+    if (current == null) return false;
+    return p.songs.any((s) => s.uri == current.uri);
+  }
+
+
   // 👉 formata 75 min → "1 h 15 m" | 4 min → "04:00"
   String _fmtTotal(int millis) {
     if (millis == 0) return '--:--';
@@ -39,6 +47,8 @@ class PlaylistCardTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6),
       child: Card(
+        color: _isPlaying(playlist) ? Colors.yellow : null,
+
         child: ListTile(
           onTap: onTap,
           leading: const Icon(Icons.library_music),

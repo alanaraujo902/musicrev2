@@ -152,17 +152,37 @@ class _SongListWidgetState extends State<SongListWidget> {
                                 : Text(title),
                           ),
                           const SizedBox(width: 8),
-                          FutureBuilder<Duration?>(
-                            future: _durationOf(song),
-                            builder: (context, snap) {
-                              return Text(
-                                snap.hasData ? _fmt(snap.data!) : '--:--',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              FutureBuilder<Duration?>(
+                                future: _durationOf(song),
+                                builder: (context, snap) {
+                                  return Text(
+                                    snap.hasData ? '${_fmt(snap.data!)}' : '--:--',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  );
+                                },
+                              ),
+                              if (widget.controller.currentSong?.uri == song.uri)
+                                StreamBuilder<Duration>(
+                                  stream: widget.controller.positionStream,
+                                  builder: (context, snap) {
+                                    final pos = snap.data ?? Duration.zero;
+                                    return Text(
+                                      '${_fmt(pos)}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    );
+                                  },
                                 ),
-                              );
-                            },
+                            ],
                           ),
                         ],
                       ),

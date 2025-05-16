@@ -3,7 +3,6 @@ import 'playlist_controller.dart';
 import 'playlist_folder_tile.dart';
 import 'playlist_card_tile.dart';
 
-
 class PlaylistPage extends StatefulWidget {
   @override
   State<PlaylistPage> createState() => _PlaylistPageState();
@@ -23,9 +22,11 @@ class _PlaylistPageState extends State<PlaylistPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Playlists'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
         ),
         actions: [
           IconButton(
@@ -34,6 +35,33 @@ class _PlaylistPageState extends State<PlaylistPage> {
             tooltip: 'Nova Pasta',
           ),
         ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: Theme.of(context).primaryColor),
+              child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
+            ),
+            ListTile(
+              leading: Icon(Icons.playlist_play),
+              title: Text('Playlists'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/playlists');
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.library_music),
+              title: Text('Músicas'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/');
+              },
+            ),
+          ],
+        ),
       ),
       body: ListView(
         children: [

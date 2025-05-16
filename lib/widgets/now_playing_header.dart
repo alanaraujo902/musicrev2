@@ -110,16 +110,38 @@ class _NowPlayingHeaderState extends State<NowPlayingHeader> {
                         SizedBox(height: 10),
                         StreamBuilder<Duration?>(
                           stream: MusicController().durationStream,
-                          builder: (context, snapshot) {
-                            final duration = snapshot.data ?? Duration.zero;
-                            final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-                            final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-                            return Text(
-                              "Duração: $minutes:$seconds",
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
+                          builder: (context, durationSnapshot) {
+                            final duration = durationSnapshot.data ?? Duration.zero;
+                            final durMin = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+                            final durSec = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+
+                            return StreamBuilder<Duration>(
+                              stream: MusicController().positionStream,
+                              builder: (context, positionSnapshot) {
+                                final position = positionSnapshot.data ?? Duration.zero;
+                                final posMin = position.inMinutes.remainder(60).toString().padLeft(2, '0');
+                                final posSec = position.inSeconds.remainder(60).toString().padLeft(2, '0');
+
+                                return Column(
+                                  children: [
+                                    Text(
+                                      "$durMin:$durSec",
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    Text(
+                                      "$posMin:$posSec",
+                                      style: TextStyle(
+                                        color: Colors.purpleAccent,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             );
                           },
                         ),

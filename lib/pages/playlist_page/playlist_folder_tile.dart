@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:untitled1/models/playlist_folder.dart';
 import 'package:untitled1/controllers/music/music_controller.dart';
-
+import '../../models/playlist.dart';
 import 'playlist_card_tile.dart';
 import 'playlist_controller.dart';
 
@@ -16,6 +16,12 @@ class PlaylistFolderTile extends StatelessWidget {
     required this.controller,
     required this.onUpdate,
   });
+
+  bool _isFolderPlaying(List<Playlist> playlists) {
+    final current = MusicController().currentSong;
+    if (current == null) return false;
+    return playlists.any((p) => p.songs.any((s) => s.uri == current.uri));
+  }
 
   String _fmtTotal(int millis) {
     if (millis == 0) return '--:--';
@@ -42,6 +48,9 @@ class PlaylistFolderTile extends StatelessWidget {
         );
 
         return Card(
+          color: _isFolderPlaying(currentPlaylists) ? Colors.yellow.shade100 : null,
+
+
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           child: ExpansionTile(
             title: Text(
