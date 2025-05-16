@@ -79,11 +79,6 @@ class _SongListWidgetState extends State<SongListWidget> {
 
                         await widget.controller.playSong(song);
 
-                        // Aguarda até que currentSongNotifier seja igual à música tocada
-                        while (widget.controller.currentSongNotifier.value?.uri != song.uri) {
-                          await Future.delayed(Duration(milliseconds: 50));
-                        }
-
                         if (mounted) {
                           Navigator.push(
                             context,
