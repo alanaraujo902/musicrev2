@@ -5,16 +5,18 @@ import '../models/local_song.dart';
 import '../controllers/music/music_controller.dart';
 import '../pages/now_playing_page.dart';
 
-/// Lista de músicas com suporte a reordenação, exibição do tempo de duração
-/// (mm:ss) ao lado do título e indicações de favorito / ouvido.
 class SongListWidget extends StatefulWidget {
   final List<dynamic> songs;
   final MusicController controller;
+  final void Function(List<LocalSong> songs)? onConfirmRemove;
+  final bool showRemoveIcon;
 
   const SongListWidget({
     Key? key,
     required this.songs,
     required this.controller,
+    this.onConfirmRemove,
+    this.showRemoveIcon = false,
   }) : super(key: key);
 
   @override
@@ -22,19 +24,16 @@ class SongListWidget extends StatefulWidget {
 }
 
 class _SongListWidgetState extends State<SongListWidget> {
-  /// Formata [Duration] em "MM:SS".
-  String _fmt(Duration d) =>
-      "${d.inMinutes.remainder(60).toString().padLeft(2, '0')}:" // MM
-          "${d.inSeconds.remainder(60).toString().padLeft(2, '0')}";     // SS
+  final Set<LocalSong> songsToRemove = {};
 
-  /// Retorna um [Future] que resolve para a duração da música.
+  String _fmt(Duration d) =>
+      "${d.inMinutes.remainder(60).toString().padLeft(2, '0')}:${d.inSeconds.remainder(60).toString().padLeft(2, '0')}";
+
   Future<Duration?> _durationOf(dynamic song) async {
     if (song is LocalSong) {
-      // Já temos em cache
       if (song.durationMillis != null) {
         return Duration(milliseconds: song.durationMillis!);
       }
-      // Consulta serviço e persiste para uso futuro
       final d = await widget.controller.audioService.fetchDuration(song.uri);
       song.durationMillis = d?.inMilliseconds;
       return d;
@@ -69,26 +68,24 @@ class _SongListWidgetState extends State<SongListWidget> {
                   final title = song.title;
                   final artist = song.artist ?? 'Artista desconhecido';
                   final isPlaying = widget.controller.currentSong?.uri == song.uri;
+                  final marked = widget.showRemoveIcon && songsToRemove.contains(song);
 
                   return Container(
                     key: ValueKey(song.uri),
                     color: isPlaying ? Colors.orange.withOpacity(0.3) : null,
                     child: ListTile(
                       onTap: () async {
-                        final isCurrent = widget.controller.currentSong?.uri == song.uri;
-                        if (!isCurrent) {
-                          await widget.controller.playSong(song);
-                        }
-                        if (mounted) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => NowPlayingPage(
-                                song: song,
-                                controller: widget.controller,
+                        if (!widget.showRemoveIcon) {
+                          final isCurrent = widget.controller.currentSong?.uri == song.uri;
+                          if (!isCurrent) await widget.controller.playSong(song);
+                          if (mounted) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => NowPlayingPage(song: song, controller: widget.controller),
                               ),
-                            ),
-                          ).then((_) => setState(() {}));
+                            ).then((_) => setState(() {}));
+                          }
                         }
                       },
                       leading: Row(
@@ -108,16 +105,35 @@ class _SongListWidgetState extends State<SongListWidget> {
                             const Icon(Icons.favorite, color: Colors.red, size: 18),
                         ],
                       ),
-                      trailing: isPlaying
-                          ? const Icon(Icons.play_arrow)
-                          : (song is SongModel
-                          ? QueryArtworkWidget(
-                        id: song.id,
-                        type: ArtworkType.AUDIO,
-                        nullArtworkWidget: const Icon(Icons.music_note),
-                      )
-                          : const Icon(Icons.music_note)),
-                      // ----- TÍTULO + DURAÇÃO ----- //
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (widget.showRemoveIcon && song is LocalSong)
+                            IconButton(
+                              icon: Icon(
+                                Icons.delete,
+                                color: songsToRemove.contains(song) ? Colors.red : Colors.grey,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  if (songsToRemove.contains(song)) {
+                                    songsToRemove.remove(song);
+                                  } else {
+                                    songsToRemove.add(song);
+                                  }
+                                });
+                              },
+                            ),
+                          if (!widget.showRemoveIcon)
+                            (song is SongModel
+                                ? QueryArtworkWidget(
+                              id: song.id,
+                              type: ArtworkType.AUDIO,
+                              nullArtworkWidget: const Icon(Icons.music_note),
+                            )
+                                : const Icon(Icons.music_note)),
+                        ],
+                      ),
                       title: Row(
                         children: [
                           Expanded(
@@ -158,6 +174,19 @@ class _SongListWidgetState extends State<SongListWidget> {
             },
           ),
         ),
+        if (widget.showRemoveIcon && songsToRemove.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: ElevatedButton.icon(
+              icon: Icon(Icons.delete_forever),
+              label: Text("Confirmar Exclusão (${songsToRemove.length})"),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () {
+                widget.onConfirmRemove?.call(songsToRemove.toList());
+                setState(() => songsToRemove.clear());
+              },
+            ),
+          ),
         StreamBuilder<bool>(
           stream: widget.controller.playingStream,
           builder: (context, snapshot) {

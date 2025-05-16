@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import '../dialogs/add_to_playlist_dialog.dart';
 import '../models/playlist.dart';
 import '../models/local_song.dart';
-//import '../controllers/music_controller.dart';
 import '../controllers/music/music_controller.dart';
 import '../services/playlist_service.dart';
 import '../widgets/song_list_widget.dart';
@@ -26,12 +26,13 @@ class _PlaylistSongsPageState extends State<PlaylistSongsPage> {
   late List<LocalSong> sortedSongs;
   final controller = MusicController();
   final PlaylistService playlistService = PlaylistService();
+  bool isRemoving = false;
 
   @override
   void initState() {
     super.initState();
     sortedSongs = List.of(widget.playlist.songs);
-    controller.loadPlaylist(widget.playlist); // CORREÇÃO AQUI
+    controller.loadPlaylist(widget.playlist);
   }
 
   void _sortSongs(SortOption option) {
@@ -83,6 +84,36 @@ class _PlaylistSongsPageState extends State<PlaylistSongsPage> {
         ),
         actions: [
           IconButton(
+            icon: Icon(Icons.playlist_add),
+            tooltip: 'Adicionar músicas',
+            onPressed: () {
+              showAddToPlaylistDialog(
+                context: context,
+                availableSongs: controller.songs,
+                playlist: widget.playlist,
+                onUpdated: (updated) async {
+                  final all = await playlistService.loadPlaylists();
+                  final idx = all.indexWhere((p) => p.name == updated.name);
+                  if (idx != -1) {
+                    all[idx] = updated;
+                    await playlistService.savePlaylists(all);
+                    controller.playlistsNotifier.value = List.from(all);
+                    setState(() {
+                      sortedSongs = updated.songs;
+                    });
+                  }
+                },
+              );
+            },
+          ),
+          IconButton(
+            icon: Icon(isRemoving ? Icons.cancel : Icons.playlist_remove),
+            tooltip: isRemoving ? 'Cancelar remoção' : 'Remover músicas',
+            onPressed: () {
+              setState(() => isRemoving = !isRemoving);
+            },
+          ),
+          IconButton(
             icon: Icon(Icons.save),
             onPressed: _saveOrder,
             tooltip: 'Salvar nova ordem',
@@ -99,7 +130,23 @@ class _PlaylistSongsPageState extends State<PlaylistSongsPage> {
           ),
         ],
       ),
-      body: SongListWidget(songs: sortedSongs, controller: controller),
+      body: SongListWidget(
+        songs: sortedSongs,
+        controller: controller,
+        showRemoveIcon: isRemoving,
+        onConfirmRemove: (toRemove) async {
+          sortedSongs.removeWhere((s) => toRemove.contains(s));
+          final updated = Playlist(name: widget.playlist.name, songs: sortedSongs);
+          final all = await playlistService.loadPlaylists();
+          final idx = all.indexWhere((p) => p.name == widget.playlist.name);
+          if (idx != -1) {
+            all[idx] = updated;
+            await playlistService.savePlaylists(all);
+            controller.playlistsNotifier.value = List.from(all);
+          }
+          setState(() {});
+        },
+      ),
     );
   }
 }
