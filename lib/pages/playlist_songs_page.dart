@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:filesystem_picker/filesystem_picker.dart';
 import 'package:flutter/material.dart';
 import '../dialogs/add_to_playlist_dialog.dart';
 import '../models/playlist.dart';
@@ -86,24 +90,49 @@ class _PlaylistSongsPageState extends State<PlaylistSongsPage> {
           IconButton(
             icon: Icon(Icons.playlist_add),
             tooltip: 'Adicionar músicas',
-            onPressed: () {
-              showAddToPlaylistDialog(
-                context: context,
-                availableSongs: controller.songs,
-                playlist: widget.playlist,
-                onUpdated: (updated) async {
-                  final all = await playlistService.loadPlaylists();
-                  final idx = all.indexWhere((p) => p.name == updated.name);
-                  if (idx != -1) {
-                    all[idx] = updated;
-                    await playlistService.savePlaylists(all);
-                    controller.playlistsNotifier.value = List.from(all);
-                    setState(() {
-                      sortedSongs = updated.songs;
-                    });
-                  }
-                },
+            onPressed: () async {
+              final result = await FilePicker.platform.pickFiles(
+                type: FileType.custom,
+                allowedExtensions: ['mp3'],
+                allowMultiple: true,
               );
+
+              if (result != null) {
+                final files = result.paths.whereType<String>().toList();
+                final newSongs = <LocalSong>[];
+
+                for (final path in files) {
+                  final dur = await controller.audioService.fetchDuration(Uri.file(path).toString());
+                  final song = LocalSong(
+                    id: path.hashCode,
+                    title: path.split('/').last,
+                    artist: 'Desconhecido',
+                    uri: Uri.file(path).toString(),
+                    durationMillis: dur?.inMilliseconds ?? 0,
+                  );
+                  newSongs.add(song);
+                }
+
+                final updated = Playlist(
+                  name: widget.playlist.name,
+                  songs: [
+                    ...widget.playlist.songs,
+                    ...newSongs.where((s) =>
+                    !widget.playlist.songs.any((e) => e.uri == s.uri)),
+                  ],
+                );
+
+                final all = await playlistService.loadPlaylists();
+                final idx = all.indexWhere((p) => p.name == widget.playlist.name);
+                if (idx != -1) {
+                  all[idx] = updated;
+                  await playlistService.savePlaylists(all);
+                  controller.playlistsNotifier.value = List.from(all);
+                  setState(() {
+                    sortedSongs = updated.songs;
+                  });
+                }
+              }
             },
           ),
           IconButton(
