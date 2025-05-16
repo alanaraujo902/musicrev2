@@ -88,8 +88,8 @@ class _PlaylistSongsPageState extends State<PlaylistSongsPage> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.playlist_add),
-            tooltip: 'Adicionar músicas',
+            icon: Icon(Icons.music_note),
+            tooltip: 'Adicionar músicas individuais',
             onPressed: () async {
               final result = await FilePicker.platform.pickFiles(
                 type: FileType.custom,
@@ -136,6 +136,51 @@ class _PlaylistSongsPageState extends State<PlaylistSongsPage> {
             },
           ),
           IconButton(
+            icon: Icon(Icons.folder_open),
+            tooltip: 'Adicionar músicas de uma pasta',
+            onPressed: () async {
+              final rootPath = Directory('/storage/emulated/0');
+              String? path = await FilesystemPicker.open(
+                title: 'Selecione uma pasta de músicas',
+                context: context,
+                rootDirectory: rootPath,
+                fsType: FilesystemType.folder,
+                folderIconColor: Colors.teal,
+                pickText: 'Selecionar esta pasta',
+                requestPermission: () async {
+                  return await controller.requestPermission();
+                },
+              );
+
+              if (path != null) {
+                final foundSongs = await controller.audioService.loadSongs(directoryPath: path);
+                final localSongs = foundSongs.whereType<LocalSong>().toList();
+
+                if (localSongs.isEmpty) return;
+
+                final updated = Playlist(
+                  name: widget.playlist.name,
+                  songs: [
+                    ...widget.playlist.songs,
+                    ...localSongs.where((s) =>
+                    !widget.playlist.songs.any((e) => e.uri == s.uri)),
+                  ],
+                );
+
+                final all = await playlistService.loadPlaylists();
+                final idx = all.indexWhere((p) => p.name == widget.playlist.name);
+                if (idx != -1) {
+                  all[idx] = updated;
+                  await playlistService.savePlaylists(all);
+                  controller.playlistsNotifier.value = List.from(all);
+                  setState(() {
+                    sortedSongs = updated.songs;
+                  });
+                }
+              }
+            },
+          ),
+          IconButton(
             icon: Icon(isRemoving ? Icons.cancel : Icons.playlist_remove),
             tooltip: isRemoving ? 'Cancelar remoção' : 'Remover músicas',
             onPressed: () {
@@ -158,6 +203,7 @@ class _PlaylistSongsPageState extends State<PlaylistSongsPage> {
             ],
           ),
         ],
+
       ),
       body: SongListWidget(
         songs: sortedSongs,
