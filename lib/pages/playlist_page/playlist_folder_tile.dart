@@ -17,6 +17,15 @@ class PlaylistFolderTile extends StatelessWidget {
     required this.onUpdate,
   });
 
+  String _fmtTotal(int millis) {
+    if (millis == 0) return '--:--';
+    final d = Duration(milliseconds: millis);
+    if (d.inHours > 0) {
+      return '${d.inHours} h ${d.inMinutes.remainder(60).toString().padLeft(2, '0')} m';
+    }
+    return '${d.inMinutes.remainder(60).toString().padLeft(2, '0')}:${d.inSeconds.remainder(60).toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
@@ -28,10 +37,17 @@ class PlaylistFolderTile extends StatelessWidget {
 
         final isChecked = currentPlaylists.isNotEmpty && currentPlaylists.every((p) => p.isChecked);
 
+        final totalMs = currentPlaylists.expand((p) => p.songs).fold<int>(
+          0, (sum, s) => sum + (s.durationMillis ?? 0),
+        );
+
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           child: ExpansionTile(
-            title: Text(isChecked ? '${folder.name} ✔️' : folder.name),
+            title: Text(
+              '${folder.name} ${isChecked ? "✔️" : ""} • ${_fmtTotal(totalMs)}',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             children: [
               ReorderableListView(
                 shrinkWrap: true,
