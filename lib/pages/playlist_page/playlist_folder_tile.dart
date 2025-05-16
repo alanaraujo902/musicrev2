@@ -17,12 +17,6 @@ class PlaylistFolderTile extends StatelessWidget {
     required this.onUpdate,
   });
 
-  bool _isFolderPlaying(List<Playlist> playlists) {
-    final current = MusicController().currentSong;
-    if (current == null) return false;
-    return playlists.any((p) => p.songs.any((s) => s.uri == current.uri));
-  }
-
   String _fmtTotal(int millis) {
     if (millis == 0) return '--:--';
     final d = Duration(milliseconds: millis);
@@ -34,57 +28,66 @@ class PlaylistFolderTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder(
-      valueListenable: MusicController().playlistsNotifier,
-      builder: (context, playlists, _) {
-        final currentPlaylists = folder.playlists.map((fp) {
-          return playlists.firstWhere((p) => p.name == fp.name, orElse: () => fp);
-        }).toList();
+    final controllerInstance = MusicController();
+    return ValueListenableBuilder<dynamic>(
+      valueListenable: controllerInstance.currentSongNotifier,
+      builder: (_, __, ___) {
+        return ValueListenableBuilder<List<Playlist>>(
+          valueListenable: controllerInstance.playlistsNotifier,
+          builder: (context, allPlaylists, _) {
+            final currentPlaylists = folder.playlists.map((fp) {
+              return allPlaylists.firstWhere((p) => p.name == fp.name, orElse: () => fp);
+            }).toList();
 
-        final isChecked = currentPlaylists.isNotEmpty && currentPlaylists.every((p) => p.isChecked);
+            final isChecked = currentPlaylists.isNotEmpty &&
+                currentPlaylists.every((p) => p.isChecked);
 
-        final totalMs = currentPlaylists.expand((p) => p.songs).fold<int>(
-          0, (sum, s) => sum + (s.durationMillis ?? 0),
-        );
+            final totalMs = currentPlaylists.expand((p) => p.songs).fold<int>(
+              0, (sum, s) => sum + (s.durationMillis ?? 0),
+            );
 
-        return Card(
-          color: _isFolderPlaying(currentPlaylists) ? Colors.yellow.shade100 : null,
+            final currentSong = controllerInstance.currentSong;
+            final isPlaying = currentSong != null &&
+                currentPlaylists.any((p) => p.songs.any((s) => s.uri == currentSong.uri));
 
-
-          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          child: ExpansionTile(
-            title: Text(
-              '${folder.name} ${isChecked ? "✔️" : ""} • ${_fmtTotal(totalMs)}',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            children: [
-              ReorderableListView(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                onReorder: (oldIdx, newIdx) async {
-                  if (newIdx > oldIdx) newIdx -= 1;
-                  final item = folder.playlists.removeAt(oldIdx);
-                  folder.playlists.insert(newIdx, item);
-                  await controller.saveFolders();
-                  onUpdate();
-                },
-                children: currentPlaylists.map((p) => Container(
-                  key: ValueKey(p.name),
-                  child: PlaylistCardTile(
-                    playlist: p,
-                    folder: folder,
-                    onTap: () => controller.openPlaylist(context, p),
-                    onRemoveFromFolder: () async {
-                      folder.playlists.removeWhere((x) => x.name == p.name);
-                      controller.loosePlaylists.add(p);
+            return Card(
+              color: isPlaying ? Colors.yellow.shade100 : null,
+              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              child: ExpansionTile(
+                title: Text(
+                  '${folder.name} ${isChecked ? "✔️" : ""} • ${_fmtTotal(totalMs)}',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                children: [
+                  ReorderableListView(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    onReorder: (oldIdx, newIdx) async {
+                      if (newIdx > oldIdx) newIdx -= 1;
+                      final item = folder.playlists.removeAt(oldIdx);
+                      folder.playlists.insert(newIdx, item);
                       await controller.saveFolders();
                       onUpdate();
                     },
-                  ),
-                )).toList(),
-              )
-            ],
-          ),
+                    children: currentPlaylists.map((p) => Container(
+                      key: ValueKey(p.name),
+                      child: PlaylistCardTile(
+                        playlist: p,
+                        folder: folder,
+                        onTap: () => controller.openPlaylist(context, p),
+                        onRemoveFromFolder: () async {
+                          folder.playlists.removeWhere((x) => x.name == p.name);
+                          controller.loosePlaylists.add(p);
+                          await controller.saveFolders();
+                          onUpdate();
+                        },
+                      ),
+                    )).toList(),
+                  )
+                ],
+              ),
+            );
+          },
         );
       },
     );

@@ -75,17 +75,25 @@ class _SongListWidgetState extends State<SongListWidget> {
                     color: isPlaying ? Colors.orange.withOpacity(0.3) : null,
                     child: ListTile(
                       onTap: () async {
-                        if (!widget.showRemoveIcon) {
-                          final isCurrent = widget.controller.currentSong?.uri == song.uri;
-                          if (!isCurrent) await widget.controller.playSong(song);
-                          if (mounted) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => NowPlayingPage(song: song, controller: widget.controller),
+                        if (widget.showRemoveIcon) return;
+
+                        await widget.controller.playSong(song);
+
+                        // Aguarda até que currentSongNotifier seja igual à música tocada
+                        while (widget.controller.currentSongNotifier.value?.uri != song.uri) {
+                          await Future.delayed(Duration(milliseconds: 50));
+                        }
+
+                        if (mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => NowPlayingPage(
+                                song: song,
+                                controller: widget.controller,
                               ),
-                            ).then((_) => setState(() {}));
-                          }
+                            ),
+                          ).then((_) => setState(() {}));
                         }
                       },
                       leading: Row(

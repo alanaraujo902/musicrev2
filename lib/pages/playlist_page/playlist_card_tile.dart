@@ -40,43 +40,47 @@ class PlaylistCardTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // soma das durações (se faltar alguma fica 0)
-    final totalMs = playlist.songs.fold<int>(
-        0, (sum, s) => sum + (s.durationMillis ?? 0));
+    return ValueListenableBuilder<dynamic>(
+      valueListenable: MusicController().currentSongNotifier,
+      builder: (_, currentSong, __) {
+        final totalMs = playlist.songs.fold<int>(
+            0, (sum, s) => sum + (s.durationMillis ?? 0));
+        final isPlaying = currentSong != null &&
+            playlist.songs.any((s) => s.uri == currentSong.uri);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6),
-      child: Card(
-        color: _isPlaying(playlist) ? Colors.yellow : null,
-
-        child: ListTile(
-          onTap: onTap,
-          leading: const Icon(Icons.library_music),
-          title: ValueListenableBuilder<List<Playlist>>(
-            valueListenable: MusicController().playlistsNotifier,
-            builder: (_, playlists, __) {
-              final updated = playlists.firstWhere(
-                    (p) => p.name == playlist.name,
-                orElse: () => playlist,
-              );
-              return Text(updated.isChecked ? '${updated.name} ✔️' : updated.name);
-            },
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6),
+          child: Card(
+            color: isPlaying ? Colors.yellow.shade100 : null,
+            child: ListTile(
+              onTap: onTap,
+              leading: const Icon(Icons.library_music),
+              title: ValueListenableBuilder<List<Playlist>>(
+                valueListenable: MusicController().playlistsNotifier,
+                builder: (_, playlists, __) {
+                  final updated = playlists.firstWhere(
+                        (p) => p.name == playlist.name,
+                    orElse: () => playlist,
+                  );
+                  return Text(updated.isChecked ? '${updated.name} ✔️' : updated.name);
+                },
+              ),
+              subtitle: Text(
+                '${playlist.songs.length} músicas • ${_fmtTotal(totalMs)}',
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (onMoveToFolder != null)
+                    IconButton(icon: const Icon(Icons.folder_open), onPressed: onMoveToFolder),
+                  if (onRemoveFromFolder != null)
+                    IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: onRemoveFromFolder),
+                ],
+              ),
+            ),
           ),
-          // 🚀 agora mostra qtd + duração total
-          subtitle: Text(
-            '${playlist.songs.length} músicas • ${_fmtTotal(totalMs)}',
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (onMoveToFolder != null)
-                IconButton(icon: const Icon(Icons.folder_open), onPressed: onMoveToFolder),
-              if (onRemoveFromFolder != null)
-                IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: onRemoveFromFolder),
-            ],
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
