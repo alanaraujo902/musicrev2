@@ -1,11 +1,11 @@
-
 import 'package:flutter/material.dart';
 import '../controllers/music/music_controller.dart';
+import '../pages/text_note_page.dart';
 
 class NowPlayingHeader extends StatefulWidget {
   final dynamic currentSong;
 
-  const NowPlayingHeader({required this.currentSong});
+  const NowPlayingHeader({required this.currentSong, super.key});
 
   @override
   State<NowPlayingHeader> createState() => _NowPlayingHeaderState();
@@ -15,140 +15,94 @@ class _NowPlayingHeaderState extends State<NowPlayingHeader> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(top: 40, bottom: 20),
+      padding: const EdgeInsets.only(top: 40, bottom: 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [Colors.white, Colors.grey.shade100],
         ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
         boxShadow: [
           BoxShadow(
             color: Colors.purpleAccent.withOpacity(0.2),
             blurRadius: 20,
-            offset: Offset(0, 10),
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Column(
         children: [
-          Stack(
-            alignment: Alignment.center,
+          /* ------------ ÍCONE DE ARQUIVO-TEXTO (tocável) ------------ */
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const TextNotePage()),
+              );
+            },
+            child: Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                color: Colors.deepPurple,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.purple.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.description,
+                  size: 60, color: Colors.white),
+            ),
+          ),
+          const SizedBox(height: 20),
+          /* ---------------- TÍTULO / ARTISTA ---------------- */
+          Text(
+            widget.currentSong.title,
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          Text(
+            widget.currentSong.artist,
+            style: const TextStyle(
+              color: Colors.black54,
+              fontSize: 16,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 10),
+          /* -------------- CHECK / FAVORITO ---------------- */
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 220,
-                height: 350,
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.purple.withOpacity(0.3),
-                      blurRadius: 30,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
+              Checkbox(
+                value: widget.currentSong.isChecked,
+                onChanged: (v) async {
+                  await MusicController()
+                      .toggleChecked(widget.currentSong, v ?? false);
+                  setState(() {});
+                },
+                checkColor: Colors.white,
+                activeColor: Colors.purpleAccent,
+              ),
+              IconButton(
+                icon: Icon(
+                  widget.currentSong.isFavorite
+                      ? Icons.favorite
+                      : Icons.favorite_border,
+                  color: Colors.redAccent,
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(0),
-                    bottom: Radius.circular(140),
-                  ),
-                  child: Container(
-                    color: Colors.deepPurple,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.music_note, size: 80, color: Colors.white),
-                        SizedBox(height: 20),
-                        Text(
-                          widget.currentSong.title,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        Text(
-                          widget.currentSong.artist,
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 16,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Checkbox(
-                              value: widget.currentSong.isChecked,
-                              onChanged: (value) async {
-                                await MusicController().toggleChecked(
-                                  widget.currentSong,
-                                  value ?? false,
-                                );
-                                setState(() {});
-                              },
-                              checkColor: Colors.white,
-                              activeColor: Colors.purpleAccent,
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                widget.currentSong.isFavorite
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: Colors.redAccent,
-                              ),
-                              onPressed: () async {
-                                await MusicController().toggleFavorite(widget.currentSong);
-                                setState(() {});
-                              },
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 10),
-                        StreamBuilder<Duration?>(
-                          stream: MusicController().durationStream,
-                          builder: (context, durationSnapshot) {
-                            final duration = durationSnapshot.data ?? Duration.zero;
-                            final durMin = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-                            final durSec = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-
-                            return StreamBuilder<Duration>(
-                              stream: MusicController().positionStream,
-                              builder: (context, positionSnapshot) {
-                                final position = positionSnapshot.data ?? Duration.zero;
-                                final posMin = position.inMinutes.remainder(60).toString().padLeft(2, '0');
-                                final posSec = position.inSeconds.remainder(60).toString().padLeft(2, '0');
-
-                                return Column(
-                                  children: [
-                                    Text(
-                                      "$durMin:$durSec",
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    Text(
-                                      "$posMin:$posSec",
-                                      style: TextStyle(
-                                        color: Colors.purpleAccent,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                onPressed: () async {
+                  await MusicController().toggleFavorite(widget.currentSong);
+                  setState(() {});
+                },
               ),
             ],
           ),

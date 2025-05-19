@@ -1,21 +1,30 @@
 import 'package:flutter/foundation.dart';
-//import '../../models/playlist.dart';
 import 'package:untitled1/models/playlist.dart';
 
 abstract class MusicControllerBase {
+  /* ---------------- LISTA / PLAYLIST ---------------- */
   List<dynamic> songs = [];
   int _currentSongIndex = -1;
   dynamic _currentSong;
   Playlist? _loadedPlaylist;
-  final ValueNotifier<dynamic> currentSongNotifier = ValueNotifier(null);
-  final ValueNotifier<List<Playlist>> playlistsNotifier = ValueNotifier([]);
 
-  dynamic get currentSong => _currentSong;
-  set currentSong(dynamic song) => _currentSong = song;
+  /* ------------- NOTIFIERS PARA A UI --------------- */
+  final ValueNotifier<dynamic>      currentSongNotifier   = ValueNotifier(null);
+  final ValueNotifier<List<Playlist>> playlistsNotifier   = ValueNotifier([]);
 
-  int get currentSongIndex => _currentSongIndex;
-  set currentSongIndex(int index) => _currentSongIndex = index;
+  /// 🔄 Liga/desliga continuação automática após o término da faixa
+  final ValueNotifier<bool> continuePlayingNotifier = ValueNotifier(true);
 
-  Playlist? get loadedPlaylist => _loadedPlaylist;
-  set loadedPlaylist(Playlist? playlist) => _loadedPlaylist = playlist;
+  /* ---------------- GETTERS / SETTERS -------------- */
+  dynamic get currentSong        => _currentSong;
+  set currentSong(dynamic song)  => _currentSong = song;
+
+  int  get currentSongIndex      => _currentSongIndex;
+  set currentSongIndex(int idx)  => _currentSongIndex = idx;
+
+  Playlist? get loadedPlaylist   => _loadedPlaylist;
+  set loadedPlaylist(Playlist? p) => _loadedPlaylist = p;
+
+  bool get continuePlaying       => continuePlayingNotifier.value;
+  set continuePlaying(bool v)    => continuePlayingNotifier.value = v;
 }

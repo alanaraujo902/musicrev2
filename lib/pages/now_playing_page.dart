@@ -25,9 +25,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
           valueListenable: widget.controller.currentSongNotifier,
           builder: (context, currentSong, _) {
             if (currentSong == null) {
-              return Center(
-                child: Text("Nenhuma música", style: TextStyle(color: Colors.white)),
-              );
+              return const Center(child: Text("Nenhuma música"));
             }
 
             final remaining = widget.controller.songs
@@ -40,7 +38,34 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
               children: [
                 NowPlayingHeader(currentSong: currentSong),
                 NowPlayingProgress(controller: widget.controller),
+                /* ------- Botões padrão (play/pause/next/prev) ------- */
                 NowPlayingControls(controller: widget.controller),
+
+                /* ===== NOVO: seletor de modo de reprodução ===== */
+                Padding(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable:
+                    widget.controller.continuePlayingNotifier,
+                    builder: (context, cont, _) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text("Continuar reprodução"),
+                          const SizedBox(width: 12),
+                          Switch(
+                            value: cont,
+                            onChanged: (v) =>
+                            widget.controller.continuePlaying = v,
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+
+                /* -------------- Fila de próximas músicas ------------- */
                 NowPlayingQueue(
                   controller: widget.controller,
                   remaining: remaining,
