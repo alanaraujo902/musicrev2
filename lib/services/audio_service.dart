@@ -1,29 +1,49 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:just_audio/just_audio.dart';
 import 'package:on_audio_query/on_audio_query.dart';
+import '../controllers/music/music_controller.dart';
 import '../models/local_song.dart';
+import '../models/playlist.dart';
 
 class AudioService {
   final OnAudioQuery _audioQuery = OnAudioQuery();
   final AudioPlayer _audioPlayer = AudioPlayer();
   LocalSong? _lastPlayedLocalSong;
-  final Map<String, Duration?> _durationCache = {};           // ⬅️ CACHE
-
+  final Map<String, Duration?> _durationCache = {};
 
   void Function()? onSongComplete;
 
-
   AudioService() {
-    _audioPlayer.playerStateStream.listen((state) {
+    _audioPlayer.playerStateStream.listen((state) async {
       if (state.processingState == ProcessingState.completed) {
-        if (_lastPlayedLocalSong != null) {
-          _lastPlayedLocalSong!.isChecked = true;
+        // guarda e limpa a referência para evitar marcação dupla
+        final finishedSong = _lastPlayedLocalSong;
+        _lastPlayedLocalSong = null;
+
+        if (finishedSong != null) {
+          await _handleSongCompleted(finishedSong);
         }
+
         if (onSongComplete != null) {
           onSongComplete!();
         }
       }
     });
+  }
+
+  Future<void> _handleSongCompleted(LocalSong song) async {
+    final controller = MusicController();
+
+    // garante que o controller saiba de qual playlist a música veio
+    if (controller.loadedPlaylist == null) {
+      controller.loadedPlaylist = controller.playlistsNotifier.value.firstWhere(
+            (p) => p.songs.any((s) => s.uri == song.uri),
+        orElse: () => Playlist(name: 'Temp', songs: []),
+      );
+    }
+
+    await controller.toggleChecked(song, true);
   }
 
   /// Recupera (e armazena em cache) a duração de um arquivo local.
@@ -52,33 +72,32 @@ class AudioService {
       List<LocalSong> songs = [];
       for (var file in files) {
         final uri = file.uri.toString();
-        final dur = await fetchDuration(uri);                 // ⬅️
+        final dur = await fetchDuration(uri);
 
         songs.add(LocalSong(
           id: file.hashCode,
           title: file.uri.pathSegments.last,
           artist: 'Desconhecido',
           uri: uri,
-          durationMillis: dur?.inMilliseconds,                // ⬅️
+          durationMillis: dur?.inMilliseconds,
         ));
       }
       return songs;
     } else {
-      // Mantém funcionalidade original – SongModel já expõe duration (ms ou null).
-      // Caso o valor venha null, tratamos na UI; não é possível alterar o campo (somente-leitura).
       final result = await _audioQuery.querySongs();
       return result; // List<SongModel>
     }
   }
 
-
   Future<void> playFromUri(String uri, {LocalSong? song}) async {
     try {
-      await _audioPlayer.setAudioSource(AudioSource.uri(Uri.parse(uri)));
-      await _audioPlayer.play();
+      // define ANTES de tocar para que o listener já conheça a música
       if (song != null) {
         _lastPlayedLocalSong = song;
       }
+
+      await _audioPlayer.setAudioSource(AudioSource.uri(Uri.parse(uri)));
+      await _audioPlayer.play();
     } catch (e) {
       print("Erro ao tocar música: $e");
     }

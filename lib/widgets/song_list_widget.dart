@@ -44,6 +44,22 @@ class _SongListWidgetState extends State<SongListWidget> {
     return null;
   }
 
+  void _openNowPlaying(BuildContext context) {
+    if (widget.controller.currentSong == null) return;
+
+    Navigator.popUntil(context, (route) => route.settings.name != 'nowPlaying');
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: 'nowPlaying'),
+        builder: (_) => NowPlayingPage(
+          song: widget.controller.currentSong!,
+          controller: widget.controller,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -80,15 +96,7 @@ class _SongListWidgetState extends State<SongListWidget> {
                         await widget.controller.playSong(song);
 
                         if (mounted) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => NowPlayingPage(
-                                song: song,
-                                controller: widget.controller,
-                              ),
-                            ),
-                          ).then((_) => setState(() {}));
+                          _openNowPlaying(context);
                         }
                       },
                       leading: Row(
@@ -232,15 +240,7 @@ class _SongListWidgetState extends State<SongListWidget> {
                     icon: const Icon(Icons.fullscreen),
                     label: const Text('Modo Tela Cheia'),
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => NowPlayingPage(
-                            song: currentSong,
-                            controller: widget.controller,
-                          ),
-                        ),
-                      ).then((_) => setState(() {}));
+                      _openNowPlaying(context);
                     },
                   ),
               ],

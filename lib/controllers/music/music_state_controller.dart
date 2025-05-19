@@ -13,11 +13,13 @@ mixin MusicStateController on MusicControllerBase {
 
   Future<void> toggleFavorite(LocalSong song) async {
     song.isFavorite = !song.isFavorite;
+    currentSongNotifier.notifyListeners();
     await _persistSongState(song);
   }
 
   Future<void> toggleChecked(LocalSong song, bool value) async {
     song.isChecked = value;
+    currentSongNotifier.notifyListeners();
     if (loadedPlaylist != null) {
       await _persistSongState(song);
       await evaluatePlaylistCheckedStatus();

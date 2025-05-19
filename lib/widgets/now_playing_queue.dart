@@ -39,6 +39,9 @@ class NowPlayingQueue extends StatelessWidget {
                   onTap: () async {
                     await controller.playSong(song);
                     onSongTap();
+                    if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    }
                   },
                 );
               },
