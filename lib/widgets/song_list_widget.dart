@@ -4,6 +4,7 @@ import 'package:on_audio_query/on_audio_query.dart';
 import '../models/local_song.dart';
 import '../controllers/music/music_controller.dart';
 import '../pages/now_playing_page.dart';
+import '../services/note_service.dart';
 
 class SongListWidget extends StatefulWidget {
   final List<dynamic> songs;
@@ -168,31 +169,56 @@ class _SongListWidgetState extends State<SongListWidget> {
                             children: [
                               FutureBuilder<Duration?>(
                                 future: _durationOf(song),
-                                builder: (context, snap) {
-                                  return Text(
-                                    snap.hasData ? '${_fmt(snap.data!)}' : '--:--',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade600,
-                                    ),
+                                builder: (context, durSnap) {
+                                  final durationText = durSnap.hasData ? '${_fmt(durSnap.data!)}' : '--:--';
+
+                                  return FutureBuilder<bool>(
+                                    future: NoteService().hasNote(song.uri),
+                                    builder: (context, noteSnap) {
+                                      final hasNote = noteSnap.data ?? false;
+                                      final isCurrent = widget.controller.currentSong?.uri == song.uri;
+
+                                      return Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          // Tempo total
+                                          Text(
+                                            durationText,
+                                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                          ),
+
+                                          // Tempo decorrido (somente se for a música atual)
+                                          if (isCurrent)
+                                            StreamBuilder<Duration>(
+                                              stream: widget.controller.positionStream,
+                                              builder: (context, posSnap) {
+                                                final pos = posSnap.data ?? Duration.zero;
+                                                return Text(
+                                                  '${_fmt(pos)}',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.red,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                );
+                                              },
+                                            )
+                                          else
+                                            const SizedBox(height: 16), // espaço reservado
+
+                                          // Ícone de anotação
+                                          Icon(
+                                            Icons.notes,
+                                            size: 14,
+                                            color: hasNote ? Colors.deepPurpleAccent : Colors.transparent,
+                                          ),
+                                        ],
+                                      );
+                                    },
                                   );
                                 },
                               ),
-                              if (widget.controller.currentSong?.uri == song.uri)
-                                StreamBuilder<Duration>(
-                                  stream: widget.controller.positionStream,
-                                  builder: (context, snap) {
-                                    final pos = snap.data ?? Duration.zero;
-                                    return Text(
-                                      '${_fmt(pos)}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.red,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    );
-                                  },
-                                ),
+
                             ],
                           ),
                         ],
