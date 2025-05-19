@@ -40,6 +40,8 @@ dependencies:
   path_provider: ^2.1.1
   hive: ^2.2.3
   hive_flutter: ^1.1.0
+  extended_text_field: ^16.0.2
+  extended_text_library: ^12.0.1
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
