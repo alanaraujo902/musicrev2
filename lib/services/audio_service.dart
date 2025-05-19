@@ -17,7 +17,6 @@ class AudioService {
   AudioService() {
     _audioPlayer.playerStateStream.listen((state) async {
       if (state.processingState == ProcessingState.completed) {
-        // guarda e limpa a referência para evitar marcação dupla
         final finishedSong = _lastPlayedLocalSong;
         _lastPlayedLocalSong = null;
 
@@ -32,10 +31,12 @@ class AudioService {
     });
   }
 
+  // ✅ Novo setter para garantir que a música seja registrada antes da execução
+  set lastPlayed(LocalSong song) => _lastPlayedLocalSong = song;
+
   Future<void> _handleSongCompleted(LocalSong song) async {
     final controller = MusicController();
 
-    // garante que o controller saiba de qual playlist a música veio
     if (controller.loadedPlaylist == null) {
       controller.loadedPlaylist = controller.playlistsNotifier.value.firstWhere(
             (p) => p.songs.any((s) => s.uri == song.uri),
@@ -46,7 +47,6 @@ class AudioService {
     await controller.toggleChecked(song, true);
   }
 
-  /// Recupera (e armazena em cache) a duração de um arquivo local.
   Future<Duration?> fetchDuration(String uri) async {
     if (_durationCache.containsKey(uri)) return _durationCache[uri];
 
@@ -91,11 +91,9 @@ class AudioService {
 
   Future<void> playFromUri(String uri, {LocalSong? song}) async {
     try {
-      // define ANTES de tocar para que o listener já conheça a música
       if (song != null) {
-        _lastPlayedLocalSong = song;
+        _lastPlayedLocalSong = song; // redundante mas mantém segurança
       }
-
       await _audioPlayer.setAudioSource(AudioSource.uri(Uri.parse(uri)));
       await _audioPlayer.play();
     } catch (e) {
@@ -112,9 +110,7 @@ class AudioService {
   }
 
   Stream<bool> get playingStream => _audioPlayer.playingStream;
-
   Stream<Duration> get positionStream => _audioPlayer.positionStream;
-
   Stream<Duration?> get durationStream => _audioPlayer.durationStream;
 
   Future<void> seek(Duration position) async {
