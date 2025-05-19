@@ -12,4 +12,8 @@ class NoteService {
   /// Salva a anotação [text] para a música identificada por [songKey].
   Future<void> saveNote(String songKey, String text) async =>
       _box.put(songKey, text);
+
+  Future<bool> hasNote(String key) async =>
+      (_box.get(key, defaultValue: '') ?? '').trim().isNotEmpty;
+
 }
