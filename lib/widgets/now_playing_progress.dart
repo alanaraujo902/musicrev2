@@ -7,27 +7,43 @@ class NowPlayingProgress extends StatelessWidget {
 
   const NowPlayingProgress({required this.controller});
 
+  String _fmt(Duration d) =>
+      '${d.inMinutes.remainder(60).toString().padLeft(2, '0')}:'
+          '${d.inSeconds.remainder(60).toString().padLeft(2, '0')}';
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<Duration>(
       stream: controller.positionStream,
-      builder: (context, positionSnapshot) {
-        final position = positionSnapshot.data ?? Duration.zero;
+      builder: (context, posSnap) {
+        final pos = posSnap.data ?? Duration.zero;
+
         return StreamBuilder<Duration?>(
           stream: controller.durationStream,
-          builder: (context, durationSnapshot) {
-            final duration = durationSnapshot.data ?? Duration.zero;
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: ProgressBar(
-                progress: position,
-                total: duration,
-                onSeek: controller.seek,
-                baseBarColor: Colors.grey.shade700,
-                progressBarColor: Colors.purpleAccent,
-                thumbColor: Colors.purpleAccent,
-                timeLabelTextStyle: TextStyle(color: Colors.white),
-              ),
+          builder: (context, durSnap) {
+            final dur = durSnap.data ?? Duration.zero;
+
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: ProgressBar(
+                    progress: pos,
+                    total: dur,
+                    onSeek: controller.seek,
+                    baseBarColor: Colors.grey.shade300,
+                    progressBarColor: Colors.purpleAccent,
+                    thumbColor: Colors.purpleAccent,
+                    timeLabelLocation: TimeLabelLocation.sides,
+                    timeLabelTextStyle: const TextStyle(
+                      color: Colors.black,          // ← visível!
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
             );
           },
         );

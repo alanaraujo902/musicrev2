@@ -4,16 +4,18 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import '../services/note_service.dart';
 
 class TextNotePage extends StatefulWidget {
-  const TextNotePage({super.key});
+  final String songKey;                     // 🔑 URI ou id da música
+
+  const TextNotePage({super.key, required this.songKey});
 
   @override
   State<TextNotePage> createState() => _TextNotePageState();
 }
 
 class _TextNotePageState extends State<TextNotePage>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+    with SingleTickerProviderStateMixin {
   final _controller = TextEditingController();
-  final _service = NoteService();
+  final _service    = NoteService();
   late TabController _tab;
   Timer? _debounce;
 
@@ -25,53 +27,55 @@ class _TextNotePageState extends State<TextNotePage>
     _controller.addListener(_onTextChanged);
   }
 
-  /* -------------------- LOAD / SAVE -------------------- */
+  /* ---------------- load / save ---------------- */
   Future<void> _load() async {
-    _controller.text = await _service.loadNote();
+    _controller.text = await _service.loadNote(widget.songKey);
     setState(() {});
   }
 
-  Future<void> _save() async {
-    await _service.saveNote(_controller.text);
-  }
+  Future<void> _save() async =>
+      _service.saveNote(widget.songKey, _controller.text);
 
-  /* ---- auto-save com debounce (500 ms depois da última tecla) ---- */
+  /* --------- auto-save com debounce --------- */
   void _onTextChanged() {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), _save);
   }
 
-  /* -------------------- CICLO DE VIDA ------------------ */
   @override
   void dispose() {
     _debounce?.cancel();
+    _save();
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
     _tab.dispose();
     super.dispose();
   }
 
-  /* --------------------- UI ---------------------------- */
+  /* -------------------- UI ------------------- */
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        await _save(); // garante persistência antes de sair
+        await _save();
         return true;
       },
       child: Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () async {
+              await _save();
+              Navigator.pop(context);
+            },
+          ),
           title: const Text('Anotações'),
           bottom: TabBar(
             controller: _tab,
             tabs: const [Tab(text: 'Editar'), Tab(text: 'Pré-visualizar')],
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.save),
-              onPressed: _save,
-              tooltip: 'Salvar agora',
-            ),
+            IconButton(icon: const Icon(Icons.save), onPressed: _save),
           ],
         ),
         body: TabBarView(
@@ -92,8 +96,7 @@ class _TextNotePageState extends State<TextNotePage>
             ),
             Markdown(
               data: _controller.text,
-              styleSheet:
-              MarkdownStyleSheet.fromTheme(Theme.of(context)),
+              styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)),
             ),
           ],
         ),

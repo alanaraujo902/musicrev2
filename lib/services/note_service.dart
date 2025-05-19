@@ -1,15 +1,15 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class NoteService {
-  static const _key = 'fullscreen_note_markdown';
+  static const _boxName = 'notesBox';
 
-  Future<String> loadNote() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_key) ?? '';
-  }
+  Box<String> get _box => Hive.box<String>(_boxName);
 
-  Future<void> saveNote(String text) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, text);
-  }
+  /// Carrega a anotação da música identificada por [songKey].
+  Future<String> loadNote(String songKey) async =>
+      _box.get(songKey, defaultValue: '') ?? '';
+
+  /// Salva a anotação [text] para a música identificada por [songKey].
+  Future<void> saveNote(String songKey, String text) async =>
+      _box.put(songKey, text);
 }

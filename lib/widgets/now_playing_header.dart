@@ -2,25 +2,20 @@ import 'package:flutter/material.dart';
 import '../controllers/music/music_controller.dart';
 import '../pages/text_note_page.dart';
 
-class NowPlayingHeader extends StatefulWidget {
+class NowPlayingHeader extends StatelessWidget {
   final dynamic currentSong;
 
   const NowPlayingHeader({required this.currentSong, super.key});
 
-  @override
-  State<NowPlayingHeader> createState() => _NowPlayingHeaderState();
-}
-
-class _NowPlayingHeaderState extends State<NowPlayingHeader> {
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.only(top: 40, bottom: 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
+          colors: [Colors.white, Colors.grey.shade100],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.white, Colors.grey.shade100],
         ),
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
         boxShadow: [
@@ -33,11 +28,13 @@ class _NowPlayingHeaderState extends State<NowPlayingHeader> {
       ),
       child: Column(
         children: [
-          /* ------------ ÍCONE DE ARQUIVO-TEXTO (tocável) ------------ */
+          /* ------------ ícone do bloco de notas ------------ */
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const TextNotePage()),
+                MaterialPageRoute(
+                  builder: (_) => TextNotePage(songKey: currentSong.uri),
+                ),
               );
             },
             child: Container(
@@ -59,50 +56,37 @@ class _NowPlayingHeaderState extends State<NowPlayingHeader> {
             ),
           ),
           const SizedBox(height: 20),
-          /* ---------------- TÍTULO / ARTISTA ---------------- */
+          /* ---------------- título / artista --------------- */
           Text(
-            widget.currentSong.title,
+            currentSong.title,
             style: const TextStyle(
-              color: Colors.black,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+                fontSize: 20, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           Text(
-            widget.currentSong.artist,
-            style: const TextStyle(
-              color: Colors.black54,
-              fontSize: 16,
-            ),
+            currentSong.artist,
+            style: const TextStyle(color: Colors.black54, fontSize: 16),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),
-          /* -------------- CHECK / FAVORITO ---------------- */
+          /* ---------- check e favorito ---------- */
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Checkbox(
-                value: widget.currentSong.isChecked,
-                onChanged: (v) async {
-                  await MusicController()
-                      .toggleChecked(widget.currentSong, v ?? false);
-                  setState(() {});
-                },
-                checkColor: Colors.white,
-                activeColor: Colors.purpleAccent,
+                value: currentSong.isChecked,
+                onChanged: (v) =>
+                    MusicController().toggleChecked(currentSong, v ?? false),
               ),
               IconButton(
                 icon: Icon(
-                  widget.currentSong.isFavorite
+                  currentSong.isFavorite
                       ? Icons.favorite
                       : Icons.favorite_border,
                   color: Colors.redAccent,
                 ),
-                onPressed: () async {
-                  await MusicController().toggleFavorite(widget.currentSong);
-                  setState(() {});
-                },
+                onPressed: () =>
+                    MusicController().toggleFavorite(currentSong),
               ),
             ],
           ),
