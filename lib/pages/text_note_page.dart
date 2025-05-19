@@ -8,6 +8,7 @@ import '../widgets/now_playing_controls.dart';
 
 class TextNotePage extends StatefulWidget {
   final String songKey;
+
   const TextNotePage({super.key, required this.songKey});
 
   @override
@@ -15,27 +16,27 @@ class TextNotePage extends StatefulWidget {
 }
 
 class _TextNotePageState extends State<TextNotePage>
+
     with SingleTickerProviderStateMixin {
-  final _controller       = TextEditingController();
+  final _controller = TextEditingController();
   final _searchController = TextEditingController();
-  final _scroll           = ScrollController();
-  final _fieldKey         = GlobalKey<ExtendedEditableTextState>();
-  final _service          = NoteService();
+  final _scroll = ScrollController();
+  final _fieldKey = GlobalKey<ExtendedEditableTextState>();
+  final _service = NoteService();
 
   late TabController _tab;
   Timer? _debounce;
   String _searchTerm = '';
-  bool _showSearch   = false;
+  bool _showSearch = false;
+  String? _lastLoadedKey;
 
   List<int> _hits = [];
   int _hitPtr = -1;
 
-  /* ======================== INIT / DISPOSE ======================== */
   @override
   void initState() {
     super.initState();
     _tab = TabController(length: 2, vsync: this);
-    _load();
     _controller.addListener(_onTextChanged);
 
     _searchController.addListener(() {
@@ -43,12 +44,14 @@ class _TextNotePageState extends State<TextNotePage>
       _updateHits();
       setState(() {});
     });
+
+    _load(widget.songKey);
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
-    _save();
+    _save(widget.songKey);
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
     _tab.dispose();
@@ -57,26 +60,22 @@ class _TextNotePageState extends State<TextNotePage>
     super.dispose();
   }
 
-  /* ======================== DATA I/O ======================== */
-  Future<void> _load() async {
-    _controller.text = await _service.loadNote(widget.songKey);
+  Future<void> _load(String key) async {
+    _controller.text = await _service.loadNote(key);
     _updateHits();
     setState(() {});
   }
 
-  Future<void> _save() async =>
-      _service.saveNote(widget.songKey, _controller.text);
+  Future<void> _save(String key) async => _service.saveNote(key, _controller.text);
 
-  /* ====================== TEXT LISTENERS ===================== */
   void _onTextChanged() {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      _save();
+      _save(widget.songKey);
       if (_searchTerm.isNotEmpty) _updateHits();
     });
   }
 
-  /* ======================= SEARCH HELPERS ===================== */
   void _updateHits() {
     _hits.clear();
     _hitPtr = -1;
@@ -95,16 +94,12 @@ class _TextNotePageState extends State<TextNotePage>
 
   void _jump(int dir) {
     if (_hits.isEmpty) return;
-
-    // Avança / retrocede circularmente
     _hitPtr = (_hitPtr + dir) % _hits.length;
     if (_hitPtr < 0) _hitPtr += _hits.length;
 
     final pos = _hits[_hitPtr];
-    _controller.selection =
-        TextSelection(baseOffset: pos, extentOffset: pos + _searchTerm.length);
+    _controller.selection = TextSelection(baseOffset: pos, extentOffset: pos + _searchTerm.length);
 
-    // Espera o frame para ter o caret na posição certa, depois centraliza
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCaret());
     setState(() {});
   }
@@ -113,13 +108,11 @@ class _TextNotePageState extends State<TextNotePage>
     final state = _fieldKey.currentState;
     if (state == null) return;
 
-    final caretRect =
-    state.renderEditable.getLocalRectForCaret(_controller.selection.extent);
-
-    final scrollOffset     = _scroll.offset;
-    final viewportHeight   = _scroll.position.viewportDimension;
-    final caretGlobalY     = caretRect.top + scrollOffset;
-    final targetScrollY    = caretGlobalY - viewportHeight / 2;
+    final caretRect = state.renderEditable.getLocalRectForCaret(_controller.selection.extent);
+    final scrollOffset = _scroll.offset;
+    final viewportHeight = _scroll.position.viewportDimension;
+    final caretGlobalY = caretRect.top + scrollOffset;
+    final targetScrollY = caretGlobalY - viewportHeight / 2;
 
     _scroll.animateTo(
       targetScrollY.clamp(0.0, _scroll.position.maxScrollExtent),
@@ -128,13 +121,27 @@ class _TextNotePageState extends State<TextNotePage>
     );
   }
 
-
-  /* =========================== UI =========================== */
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder(
+      valueListenable: MusicController().currentSongNotifier,
+      builder: (context, song, _) {
+        final songKey = song?.uri ?? widget.songKey;
+
+        if (_lastLoadedKey != songKey) {
+          _lastLoadedKey = songKey;
+          _load(songKey);
+        }
+
+        return _buildEditor(context, songKey);
+      },
+    );
+  }
+
+  Widget _buildEditor(BuildContext context, String songKey) {
     return WillPopScope(
       onWillPop: () async {
-        await _save();
+        await _save(songKey);
         return true;
       },
       child: Scaffold(
@@ -142,7 +149,7 @@ class _TextNotePageState extends State<TextNotePage>
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () async {
-              await _save();
+              await _save(songKey);
               Navigator.pop(context);
             },
           ),
@@ -163,128 +170,117 @@ class _TextNotePageState extends State<TextNotePage>
                   });
                 },
               ),
-              IconButton(icon: const Icon(Icons.save), onPressed: _save),
+              IconButton(icon: const Icon(Icons.save), onPressed: () => _save(songKey)),
             ]
           ],
         ),
-          body: TabBarView(
-            controller: _tab,
-            children: [
-              /* =================== TAB “EDITAR” =================== */
-              Column(
-                children: [
-                  // 🔼 NOME DA MÚSICA
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    color: Colors.grey.shade200,
-                    child: Center(
-                      child: Text(
-                        Uri.decodeFull(widget.songKey.split('/').last),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+        body: TabBarView(
+          controller: _tab,
+          children: [
+            Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  color: Colors.grey.shade200,
+                  child: Center(
+                    child: Text(
+                      Uri.decodeFull(songKey.split('/').last),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (_showSearch) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: const InputDecoration(
-                          hintText: 'Buscar palavra…',
-                          prefixIcon: Icon(Icons.search),
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.keyboard_arrow_up),
-                          onPressed: _hits.isEmpty ? null : () => _jump(-1),
-                        ),
-                        Text(_hits.isEmpty ? '0/0' : '${_hitPtr + 1}/${_hits.length}'),
-                        IconButton(
-                          icon: const Icon(Icons.keyboard_arrow_down),
-                          onPressed: _hits.isEmpty ? null : () => _jump(1),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                    ),
-                  ],
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: ExtendedTextField(
-                        key: _fieldKey,
-                        controller: _controller,
-                        scrollController: _scroll,
-                        keyboardType: TextInputType.multiline,
-                        maxLines: null,
-                        expands: true,
-                        specialTextSpanBuilder: HighlightSpanBuilder(_searchTerm),
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: 'Digite aqui em Markdown…',
-                        ),
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ),
+                ),
+                if (_showSearch) ...[
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: NowPlayingControls(controller: MusicController()),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: const InputDecoration(
+                        hintText: 'Buscar palavra…',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(icon: const Icon(Icons.keyboard_arrow_up), onPressed: _hits.isEmpty ? null : () => _jump(-1)),
+                      Text(_hits.isEmpty ? '0/0' : '${_hitPtr + 1}/${_hits.length}'),
+                      IconButton(icon: const Icon(Icons.keyboard_arrow_down), onPressed: _hits.isEmpty ? null : () => _jump(1)),
+                      const SizedBox(width: 8),
+                    ],
                   ),
                 ],
-              ),
-
-              /* =================== TAB “PREVIEW” =================== */
-              Column(
-                children: [
-                  Expanded(
-                    child: Markdown(
-                      data: _controller.text,
-                      styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: ExtendedTextField(
+                      key: _fieldKey,
+                      controller: _controller,
+                      scrollController: _scroll,
+                      keyboardType: TextInputType.multiline,
+                      maxLines: null,
+                      expands: true,
+                      specialTextSpanBuilder: HighlightSpanBuilder(_searchTerm),
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'Digite aqui em Markdown…',
+                      ),
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: NowPlayingControls(controller: MusicController()),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: NowPlayingControls(controller: MusicController()),
+                ),
+              ],
+            ),
+            Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  color: Colors.grey.shade200,
+                  child: Center(
+                    child: Text(
+                      Uri.decodeFull(songKey.split('/').last),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ],
-              ),
-            ],
-          )
+                ),
+                Expanded(
+                  child: Markdown(
+                    data: _controller.text,
+                    styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: NowPlayingControls(controller: MusicController()),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/* ============================================================= */
-/*                 HIGHLIGHT BUILD (sem alterações)               */
-/* ============================================================= */
-
+/* Highlight builder */
 class HighlightSpanBuilder extends SpecialTextSpanBuilder {
   final String searchTerm;
   HighlightSpanBuilder(this.searchTerm);
 
   @override
-  SpecialText? createSpecialText(String flag,
-      {TextStyle? textStyle,
-        SpecialTextGestureTapCallback? onTap,
-        required int index}) =>
-      null;
+  SpecialText? createSpecialText(String flag, {TextStyle? textStyle, SpecialTextGestureTapCallback? onTap, required int index}) => null;
 
   @override
-  TextSpan build(String data,
-      {TextStyle? textStyle,
-        SpecialTextGestureTapCallback? onTap,
-        bool? deleteAll}) {
+  TextSpan build(String data, {TextStyle? textStyle, SpecialTextGestureTapCallback? onTap, bool? deleteAll}) {
     if (searchTerm.isEmpty) {
       return TextSpan(text: data, style: textStyle);
     }
