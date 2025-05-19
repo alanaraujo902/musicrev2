@@ -24,10 +24,14 @@ class NowPlayingControls extends StatelessWidget {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 shape: CircleBorder(),
-                padding: EdgeInsets.all(20),
+                padding: EdgeInsets.all(12), // 🔽 menor que 20
                 backgroundColor: Colors.purpleAccent.shade100,
               ),
-              child: Icon(isPlaying ? Icons.pause : Icons.play_arrow, size: 32, color: Colors.black),
+              child: Icon(
+                isPlaying ? Icons.pause : Icons.play_arrow,
+                size: 28, // 🔽 reduzido de 32
+                color: Colors.black,
+              ),
               onPressed: controller.togglePlayPause,
             ),
             SizedBox(width: 20),

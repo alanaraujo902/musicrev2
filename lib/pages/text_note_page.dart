@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:extended_text_field/extended_text_field.dart';
+import '../controllers/music/music_controller.dart';
 import '../services/note_service.dart';
+import '../widgets/now_playing_controls.dart';
 
 class TextNotePage extends StatefulWidget {
   final String songKey;
@@ -165,72 +167,99 @@ class _TextNotePageState extends State<TextNotePage>
             ]
           ],
         ),
-        body: TabBarView(
-          controller: _tab,
-          children: [
-            /* =================== TAB “EDITAR” =================== */
-            Column(
-              children: [
-                if (_showSearch) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: const InputDecoration(
-                        hintText: 'Buscar palavra…',
-                        prefixIcon: Icon(Icons.search),
-                        border: OutlineInputBorder(),
+          body: TabBarView(
+            controller: _tab,
+            children: [
+              /* =================== TAB “EDITAR” =================== */
+              Column(
+                children: [
+                  // 🔼 NOME DA MÚSICA
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    color: Colors.grey.shade200,
+                    child: Center(
+                      child: Text(
+                        Uri.decodeFull(widget.songKey.split('/').last),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.keyboard_arrow_up),
-                        onPressed: _hits.isEmpty ? null : () => _jump(-1),
+                  if (_showSearch) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Buscar palavra…',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(),
+                        ),
                       ),
-                      Text(_hits.isEmpty
-                          ? '0/0'
-                          : '${_hitPtr + 1}/${_hits.length}'),
-                      IconButton(
-                        icon: const Icon(Icons.keyboard_arrow_down),
-                        onPressed: _hits.isEmpty ? null : () => _jump(1),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.keyboard_arrow_up),
+                          onPressed: _hits.isEmpty ? null : () => _jump(-1),
+                        ),
+                        Text(_hits.isEmpty ? '0/0' : '${_hitPtr + 1}/${_hits.length}'),
+                        IconButton(
+                          icon: const Icon(Icons.keyboard_arrow_down),
+                          onPressed: _hits.isEmpty ? null : () => _jump(1),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                    ),
+                  ],
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: ExtendedTextField(
+                        key: _fieldKey,
+                        controller: _controller,
+                        scrollController: _scroll,
+                        keyboardType: TextInputType.multiline,
+                        maxLines: null,
+                        expands: true,
+                        specialTextSpanBuilder: HighlightSpanBuilder(_searchTerm),
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'Digite aqui em Markdown…',
+                        ),
+                        style: const TextStyle(fontSize: 16),
                       ),
-                      const SizedBox(width: 8),
-                    ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: NowPlayingControls(controller: MusicController()),
                   ),
                 ],
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: ExtendedTextField(
-                      key: _fieldKey,
-                      controller: _controller,
-                      scrollController: _scroll,
-                      keyboardType: TextInputType.multiline,
-                      maxLines: null,
-                      expands: true,
-                      specialTextSpanBuilder:
-                      HighlightSpanBuilder(_searchTerm),
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        hintText: 'Digite aqui em Markdown…',
-                      ),
-                      style: const TextStyle(fontSize: 16),
+              ),
+
+              /* =================== TAB “PREVIEW” =================== */
+              Column(
+                children: [
+                  Expanded(
+                    child: Markdown(
+                      data: _controller.text,
+                      styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)),
                     ),
                   ),
-                ),
-              ],
-            ),
-            /* =================== TAB “PREVIEW” ================== */
-            Markdown(
-              data: _controller.text,
-              styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)),
-            ),
-          ],
-        ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: NowPlayingControls(controller: MusicController()),
+                  ),
+                ],
+              ),
+            ],
+          )
       ),
     );
   }
