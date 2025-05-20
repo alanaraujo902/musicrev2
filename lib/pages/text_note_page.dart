@@ -16,7 +16,6 @@ class TextNotePage extends StatefulWidget {
 }
 
 class _TextNotePageState extends State<TextNotePage>
-
     with SingleTickerProviderStateMixin {
   final _controller = TextEditingController();
   final _searchController = TextEditingController();
@@ -63,6 +62,7 @@ class _TextNotePageState extends State<TextNotePage>
   Future<void> _load(String key) async {
     _controller.text = await _service.loadNote(key);
     _updateHits();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scroll.jumpTo(0));
     setState(() {});
   }
 
@@ -71,7 +71,7 @@ class _TextNotePageState extends State<TextNotePage>
   void _onTextChanged() {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      _save(widget.songKey);
+      _save(_lastLoadedKey ?? widget.songKey);
       if (_searchTerm.isNotEmpty) _updateHits();
     });
   }
@@ -271,7 +271,6 @@ class _TextNotePageState extends State<TextNotePage>
   }
 }
 
-/* Highlight builder */
 class HighlightSpanBuilder extends SpecialTextSpanBuilder {
   final String searchTerm;
   HighlightSpanBuilder(this.searchTerm);
