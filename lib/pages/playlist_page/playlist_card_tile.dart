@@ -62,7 +62,19 @@ class PlaylistCardTile extends StatelessWidget {
                         (p) => p.name == playlist.name,
                     orElse: () => playlist,
                   );
-                  return Text(updated.isChecked ? '${updated.name} ✔️' : updated.name);
+                  return RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(text: updated.name, style: DefaultTextStyle.of(context).style),
+                        if (updated.isChecked)
+                          TextSpan(
+                            text: ' ✔️',
+                            style: TextStyle(color: Colors.black),
+                          ),
+                      ],
+                    ),
+                  );
+
                 },
               ),
               subtitle: Text(

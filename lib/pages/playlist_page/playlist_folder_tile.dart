@@ -55,7 +55,7 @@ class PlaylistFolderTile extends StatelessWidget {
               margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               child: ExpansionTile(
                 title: Text(
-                  '${folder.name} ${isChecked ? "✔️" : ""} • ${_fmtTotal(totalMs)}',
+                  '${folder.name} (${currentPlaylists.length}) ${isChecked ? "✔️" : ""} • ${_fmtTotal(totalMs)}',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 children: [
